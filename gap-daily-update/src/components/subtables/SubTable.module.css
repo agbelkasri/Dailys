@@ -1,0 +1,104 @@
+.wrapper {
+  width: 100%;
+}
+
+.table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 12px;
+}
+
+.table th {
+  background: #f0f4f8;
+  padding: 5px 8px;
+  text-align: left;
+  font-weight: 600;
+  color: #444;
+  border: 1px solid #dde2e8;
+  white-space: nowrap;
+}
+
+.table td {
+  padding: 4px 6px;
+  border: 1px solid #e8ecf0;
+  vertical-align: middle;
+}
+
+.table tr:hover td {
+  background: #fafbfc;
+}
+
+.table input {
+  width: 100%;
+  border: 1px solid #ddd;
+  border-radius: 3px;
+  padding: 3px 6px;
+  font-size: 12px;
+  font-family: inherit;
+  box-sizing: border-box;
+}
+
+.table input:focus {
+  outline: none;
+  border-color: #2d6a9f;
+  box-shadow: 0 0 0 2px rgba(45, 106, 159, 0.12);
+}
+
+.narrowInput {
+  max-width: 90px;
+}
+
+.wideInput {
+  min-width: 120px;
+}
+
+.narrowCol {
+  width: 120px;
+}
+
+.actionCol {
+  width: 32px;
+}
+
+.emptyRow {
+  text-align: center;
+  color: #aaa;
+  font-style: italic;
+  padding: 10px !important;
+}
+
+.removeBtn {
+  width: 24px;
+  height: 24px;
+  border: none;
+  background: #fee2e2;
+  color: #c0392b;
+  border-radius: 4px;
+  cursor: pointer;
+  font-size: 16px;
+  line-height: 1;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 0;
+}
+
+.removeBtn:hover {
+  background: #fecaca;
+}
+
+.addBtn {
+  margin-top: 6px;
+  padding: 4px 12px;
+  background: none;
+  border: 1px dashed #2d6a9f;
+  border-radius: 4px;
+  color: #2d6a9f;
+  font-size: 12px;
+  cursor: pointer;
+  transition: background 0.15s;
+}
+
+.addBtn:hover {
+  background: #f0f4f8;
+}

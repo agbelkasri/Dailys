@@ -1,0 +1,55 @@
+.row {
+  border-left: 4px solid #e0e0e0;
+  transition: border-left-color 0.3s;
+}
+
+.row:hover {
+  background: #fafbfc;
+}
+
+.responsible {
+  width: 110px;
+  min-width: 110px;
+  padding: 10px 12px;
+  font-weight: 600;
+  font-size: 12px;
+  color: #555;
+  vertical-align: top;
+  border-bottom: 1px solid #eee;
+  border-right: 1px solid #eee;
+}
+
+.measurable {
+  width: 180px;
+  min-width: 180px;
+  padding: 10px 12px;
+  font-weight: 500;
+  font-size: 13px;
+  color: #222;
+  vertical-align: top;
+  border-bottom: 1px solid #eee;
+  border-right: 1px solid #eee;
+}
+
+.status {
+  width: 72px;
+  min-width: 72px;
+  padding: 10px 8px;
+  text-align: center;
+  vertical-align: top;
+  border-bottom: 1px solid #eee;
+  border-right: 1px solid #eee;
+}
+
+.content {
+  padding: 8px 12px;
+  vertical-align: top;
+  border-bottom: 1px solid #eee;
+}
+
+.lastEdit {
+  margin-top: 4px;
+  font-size: 10px;
+  color: #aaa;
+  text-align: right;
+}

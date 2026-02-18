@@ -1,0 +1,40 @@
+.container {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 6px;
+}
+
+.dot {
+  width: 20px;
+  height: 20px;
+  border-radius: 50%;
+  border: 1px solid rgba(0, 0, 0, 0.15);
+  flex-shrink: 0;
+}
+
+.select {
+  width: 52px;
+  padding: 3px 4px;
+  border: 2px solid #ccc;
+  border-radius: 4px;
+  font-size: 13px;
+  font-weight: 600;
+  text-align: center;
+  cursor: pointer;
+  background: white;
+}
+
+.select:focus {
+  outline: none;
+  box-shadow: 0 0 0 2px rgba(45, 106, 159, 0.3);
+}
+
+.readOnlyBadge {
+  display: inline-block;
+  padding: 2px 8px;
+  border-radius: 4px;
+  font-size: 13px;
+  font-weight: 700;
+  border: 1px solid rgba(0, 0, 0, 0.1);
+}
