@@ -60,34 +60,52 @@ export function useReport(date) {
   const [report, setReport] = useState(null);
   const [sections, setSections] = useState({});
   const [loading, setLoading] = useState(true);
+  const [error, setError] = useState(null);
 
   useEffect(() => {
     if (!date) return;
 
     setLoading(true);
+    setError(null);
 
     const reportRef = doc(db, 'reports', date);
     const sectionsRef = collection(db, 'reports', date, 'sections');
     const sectionsQuery = query(sectionsRef, orderBy('sortOrder'));
 
-    const unsubReport = onSnapshot(reportRef, (snap) => {
-      const data = snap.exists() ? snap.data() : null;
-      setReport(data);
+    const unsubReport = onSnapshot(
+      reportRef,
+      (snap) => {
+        const data = snap.exists() ? snap.data() : null;
+        setReport(data);
 
-      // If this is today and no report exists yet, create it
-      if (!snap.exists() && date === getTodayDate()) {
-        ensureTodayReportExists(date);
+        // If this is today and no report exists yet, create it
+        if (!snap.exists() && date === getTodayDate()) {
+          ensureTodayReportExists(date);
+        }
+      },
+      (err) => {
+        console.error('Report snapshot error:', err);
+        setError(err.message);
+        setLoading(false);
       }
-    });
+    );
 
-    const unsubSections = onSnapshot(sectionsQuery, (snap) => {
-      const sectionsMap = {};
-      snap.docs.forEach((d) => {
-        sectionsMap[d.id] = d.data();
-      });
-      setSections(sectionsMap);
-      setLoading(false);
-    });
+    const unsubSections = onSnapshot(
+      sectionsQuery,
+      (snap) => {
+        const sectionsMap = {};
+        snap.docs.forEach((d) => {
+          sectionsMap[d.id] = d.data();
+        });
+        setSections(sectionsMap);
+        setLoading(false);
+      },
+      (err) => {
+        console.error('Sections snapshot error:', err);
+        setError(err.message);
+        setLoading(false);
+      }
+    );
 
     return () => {
       unsubReport();
@@ -95,5 +113,5 @@ export function useReport(date) {
     };
   }, [date]);
 
-  return { report, sections, loading };
+  return { report, sections, loading, error };
 }

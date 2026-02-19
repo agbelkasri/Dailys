@@ -22,8 +22,8 @@ function AppContent({ user, logout }) {
     user
   );
 
-  // Access sections data for export (shares the same subscription as DailyReport via React)
-  const { sections } = useReport(selectedDate);
+  // Single subscription shared between Header (export) and DailyReport (display)
+  const { sections, loading, error } = useReport(selectedDate);
 
   const handleExportExcel = () => {
     exportToExcel(sections, selectedDate);
@@ -47,6 +47,9 @@ function AppContent({ user, logout }) {
         <DailyReport
           date={selectedDate}
           readOnly={isReadOnly}
+          sections={sections}
+          loading={loading}
+          error={error}
           presenceMap={presenceMap}
           onFocusSection={setActiveSection}
           onBlurSection={clearActiveSection}
@@ -75,7 +78,7 @@ export default function App() {
   }
 
   if (!user) {
-    return <LoginPage onLogin={login} error={error} />;
+    return <LoginPage onLogin={(email, password) => login(email, password)} error={error} />;
   }
 
   return <AppContent user={user} logout={logout} />;

@@ -9,12 +9,10 @@ import { CommentField } from '../fields/CommentField';
 import { SubTable } from '../fields/SubTable';
 import styles from './ReportSection.module.css';
 
-export function ReportSection({ date, sectionDef, sectionData, readOnly, presenceMap, onFocusSection, onBlurSection }) {
+function useSection({ date, sectionDef, sectionData, onFocusSection, onBlurSection }) {
   const [localComments, setLocalComments] = useState(sectionData?.comments || '');
-
-  // Sync incoming real-time changes from other users into local state
-  // Only update if the field is not currently focused (to avoid clobbering your own typing)
   const [isFocused, setIsFocused] = useState(false);
+
   useEffect(() => {
     if (!isFocused) {
       setLocalComments(sectionData?.comments || '');
@@ -30,13 +28,8 @@ export function ReportSection({ date, sectionDef, sectionData, readOnly, presenc
     debouncedSaveComments(value);
   };
 
-  const handleStatusChange = (status) => {
-    updateSectionStatus(date, sectionDef.id, status);
-  };
-
-  const handleSubTableChange = (data) => {
-    updateSubTableData(date, sectionDef.id, data);
-  };
+  const handleStatusChange = (status) => updateSectionStatus(date, sectionDef.id, status);
+  const handleSubTableChange = (data) => updateSubTableData(date, sectionDef.id, data);
 
   const handleFocus = () => {
     setIsFocused(true);
@@ -46,9 +39,52 @@ export function ReportSection({ date, sectionDef, sectionData, readOnly, presenc
   const handleBlur = () => {
     setIsFocused(false);
     onBlurSection?.(sectionDef.id);
-    // Flush any pending debounced save on blur
     debouncedSaveComments.flush();
   };
+
+  return {
+    localComments,
+    handleCommentsChange,
+    handleStatusChange,
+    handleSubTableChange,
+    handleFocus,
+    handleBlur,
+  };
+}
+
+function SectionContent({ sectionDef, sectionData, readOnly, localComments, onCommentsChange, onSubTableChange, onFocus, onBlur }) {
+  return (
+    <>
+      {sectionDef.sectionType === SECTION_TYPES.NORMAL ? (
+        <CommentField
+          value={localComments}
+          onChange={onCommentsChange}
+          readOnly={readOnly}
+          onFocus={onFocus}
+          onBlur={onBlur}
+        />
+      ) : (
+        <SubTable
+          type={sectionDef.sectionType}
+          data={sectionData?.subTableData || []}
+          onChange={onSubTableChange}
+          readOnly={readOnly}
+        />
+      )}
+    </>
+  );
+}
+
+// ── Desktop: renders a <tr> inside the table ──────────────────────────────
+export function ReportSection({ date, sectionDef, sectionData, readOnly, presenceMap, onFocusSection, onBlurSection }) {
+  const {
+    localComments,
+    handleCommentsChange,
+    handleStatusChange,
+    handleSubTableChange,
+    handleFocus,
+    handleBlur,
+  } = useSection({ date, sectionDef, sectionData, onFocusSection, onBlurSection });
 
   const status = sectionData?.status || '';
   const rowBorderColor = STATUS_COLORS[status];
@@ -61,32 +97,20 @@ export function ReportSection({ date, sectionDef, sectionData, readOnly, presenc
       <td className={styles.responsible}>{sectionDef.responsible}</td>
       <td className={styles.measurable}>{sectionDef.measurable}</td>
       <td className={styles.status}>
-        <StatusBadge
-          value={status}
-          onChange={handleStatusChange}
-          readOnly={readOnly}
-        />
+        <StatusBadge value={status} onChange={handleStatusChange} readOnly={readOnly} />
       </td>
       <td className={styles.content}>
         <SectionPresence presenceMap={presenceMap} sectionId={sectionDef.id} />
-
-        {sectionDef.sectionType === SECTION_TYPES.NORMAL ? (
-          <CommentField
-            value={localComments}
-            onChange={handleCommentsChange}
-            readOnly={readOnly}
-            onFocus={handleFocus}
-            onBlur={handleBlur}
-          />
-        ) : (
-          <SubTable
-            type={sectionDef.sectionType}
-            data={sectionData?.subTableData || []}
-            onChange={handleSubTableChange}
-            readOnly={readOnly}
-          />
-        )}
-
+        <SectionContent
+          sectionDef={sectionDef}
+          sectionData={sectionData}
+          readOnly={readOnly}
+          localComments={localComments}
+          onCommentsChange={handleCommentsChange}
+          onSubTableChange={handleSubTableChange}
+          onFocus={handleFocus}
+          onBlur={handleBlur}
+        />
         {sectionData?.lastEditedBy && (
           <div className={styles.lastEdit}>
             Last edit by {sectionData.lastEditedBy}
@@ -97,5 +121,53 @@ export function ReportSection({ date, sectionDef, sectionData, readOnly, presenc
         )}
       </td>
     </tr>
+  );
+}
+
+// ── Mobile: renders a card div ────────────────────────────────────────────
+export function ReportSectionCard({ date, sectionDef, sectionData, readOnly, presenceMap, onFocusSection, onBlurSection }) {
+  const {
+    localComments,
+    handleCommentsChange,
+    handleStatusChange,
+    handleSubTableChange,
+    handleFocus,
+    handleBlur,
+  } = useSection({ date, sectionDef, sectionData, onFocusSection, onBlurSection });
+
+  const status = sectionData?.status || '';
+  const borderColor = STATUS_COLORS[status];
+
+  return (
+    <div className={styles.card} style={{ borderLeftColor: borderColor }}>
+      <div className={styles.cardHeader}>
+        <div className={styles.cardMeta}>
+          <div className={styles.cardMeasurable}>{sectionDef.measurable}</div>
+          <div className={styles.cardResponsible}>{sectionDef.responsible}</div>
+        </div>
+        <StatusBadge value={status} onChange={handleStatusChange} readOnly={readOnly} />
+      </div>
+      <div className={styles.cardBody}>
+        <SectionPresence presenceMap={presenceMap} sectionId={sectionDef.id} />
+        <SectionContent
+          sectionDef={sectionDef}
+          sectionData={sectionData}
+          readOnly={readOnly}
+          localComments={localComments}
+          onCommentsChange={handleCommentsChange}
+          onSubTableChange={handleSubTableChange}
+          onFocus={handleFocus}
+          onBlur={handleBlur}
+        />
+        {sectionData?.lastEditedBy && (
+          <div className={styles.cardLastEdit}>
+            Last edit by {sectionData.lastEditedBy}
+            {sectionData.lastEditedAt && (
+              <> at {sectionData.lastEditedAt.toDate?.()?.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}</>
+            )}
+          </div>
+        )}
+      </div>
+    </div>
   );
 }

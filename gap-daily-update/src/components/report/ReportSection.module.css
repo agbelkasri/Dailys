@@ -53,3 +53,52 @@
   color: #aaa;
   text-align: right;
 }
+
+.card {
+  background: white;
+  border-radius: 8px;
+  border: 1px solid #e0e4e8;
+  box-shadow: 0 1px 3px rgba(0,0,0,0.06);
+  overflow: hidden;
+  border-left: 4px solid #e0e0e0;
+  transition: border-left-color 0.3s;
+}
+
+.cardHeader {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 10px 14px;
+  background: #f8f9fb;
+  border-bottom: 1px solid #eee;
+  gap: 10px;
+}
+
+.cardMeta {
+  flex: 1;
+  min-width: 0;
+}
+
+.cardMeasurable {
+  font-size: 15px;
+  font-weight: 600;
+  color: #1a1a1a;
+  line-height: 1.2;
+}
+
+.cardResponsible {
+  font-size: 12px;
+  color: #888;
+  margin-top: 2px;
+}
+
+.cardBody {
+  padding: 12px 14px;
+}
+
+.cardLastEdit {
+  margin-top: 8px;
+  font-size: 11px;
+  color: #bbb;
+  text-align: right;
+}

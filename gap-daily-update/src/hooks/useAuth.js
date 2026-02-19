@@ -1,9 +1,12 @@
 import { useEffect, useState } from 'react';
-import { onAuthStateChanged, signInWithPopup, signOut } from 'firebase/auth';
-import { auth, microsoftProvider } from '../firebase';
+import {
+  onAuthStateChanged,
+  signInWithEmailAndPassword,
+  signOut,
+} from 'firebase/auth';
+import { auth } from '../firebase';
 
 export function useAuth() {
-  // undefined = still loading, null = not logged in, object = logged in
   const [user, setUser] = useState(undefined);
   const [error, setError] = useState(null);
 
@@ -14,12 +17,18 @@ export function useAuth() {
     return unsubscribe;
   }, []);
 
-  const login = async () => {
+  const login = async (email, password) => {
     setError(null);
     try {
-      await signInWithPopup(auth, microsoftProvider);
+      await signInWithEmailAndPassword(auth, email, password);
     } catch (err) {
-      setError(err.message);
+      const messages = {
+        'auth/invalid-credential': 'Incorrect email or password.',
+        'auth/user-not-found': 'No account found with that email.',
+        'auth/wrong-password': 'Incorrect password.',
+        'auth/too-many-requests': 'Too many attempts. Please try again later.',
+      };
+      setError(messages[err.code] || 'Sign in failed. Please try again.');
     }
   };
 

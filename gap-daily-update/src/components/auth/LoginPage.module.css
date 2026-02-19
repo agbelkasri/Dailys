@@ -9,7 +9,7 @@
 .card {
   background: white;
   border-radius: 12px;
-  padding: 48px 40px;
+  padding: 32px 24px;
   width: 100%;
   max-width: 380px;
   text-align: center;
@@ -47,11 +47,41 @@
   margin: 0 0 32px;
 }
 
-.msButton {
+.form {
   display: flex;
-  align-items: center;
-  justify-content: center;
-  gap: 10px;
+  flex-direction: column;
+  gap: 16px;
+  text-align: left;
+}
+
+.field {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.label {
+  font-size: 13px;
+  font-weight: 600;
+  color: #444;
+}
+
+.input {
+  padding: 10px 12px;
+  border: 1px solid #ddd;
+  border-radius: 6px;
+  font-size: 14px;
+  font-family: inherit;
+  transition: border-color 0.15s;
+}
+
+.input:focus {
+  outline: none;
+  border-color: #2d6a9f;
+  box-shadow: 0 0 0 3px rgba(45, 106, 159, 0.15);
+}
+
+.submitButton {
   width: 100%;
   padding: 12px 20px;
   background: #2d6a9f;
@@ -59,21 +89,34 @@
   border: none;
   border-radius: 6px;
   font-size: 15px;
-  font-weight: 500;
+  font-weight: 600;
   cursor: pointer;
   transition: background 0.2s;
+  margin-top: 4px;
+  min-height: 48px;
 }
 
-.msButton:hover {
+.submitButton:hover:not(:disabled) {
   background: #1a3a5c;
 }
 
+.submitButton:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
+}
+
 .error {
-  margin-top: 16px;
   padding: 10px;
   background: #fff0f0;
   border: 1px solid #ffcccc;
   border-radius: 6px;
   color: #c0392b;
   font-size: 13px;
+  margin: 0;
+}
+
+@media (max-width: 480px) {
+  .card {
+    padding: 28px 20px;
+  }
 }

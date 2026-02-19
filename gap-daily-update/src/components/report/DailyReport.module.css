@@ -33,7 +33,7 @@
   background: #fff8e1;
   border: 1px solid #ffe082;
   border-radius: 6px;
-  font-size: 13px;
+  font-size: 14px;
   color: #795548;
   text-align: center;
 }
@@ -43,6 +43,7 @@
   border-radius: 8px;
   box-shadow: 0 1px 4px rgba(0, 0, 0, 0.08);
   border: 1px solid #e0e4e8;
+  -webkit-overflow-scrolling: touch;
 }
 
 .table {
@@ -77,6 +78,28 @@
   text-transform: uppercase;
   letter-spacing: 0.5px;
   position: sticky;
-  top: 56px; /* height of header */
+  top: 0;
   z-index: 1;
+}
+
+@media (max-width: 640px) {
+  .wrapper {
+    padding: 0 8px 32px;
+  }
+
+  .tableContainer {
+    display: none;
+  }
+
+  .cardList {
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+  }
+}
+
+@media (min-width: 641px) {
+  .cardList {
+    display: none;
+  }
 }

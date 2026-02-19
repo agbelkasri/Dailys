@@ -5,12 +5,12 @@
 .table {
   width: 100%;
   border-collapse: collapse;
-  font-size: 12px;
+  font-size: 14px;
 }
 
 .table th {
   background: #f0f4f8;
-  padding: 5px 8px;
+  padding: 8px 10px;
   text-align: left;
   font-weight: 600;
   color: #444;
@@ -19,7 +19,7 @@
 }
 
 .table td {
-  padding: 4px 6px;
+  padding: 8px 8px;
   border: 1px solid #e8ecf0;
   vertical-align: middle;
 }
@@ -32,8 +32,8 @@
   width: 100%;
   border: 1px solid #ddd;
   border-radius: 3px;
-  padding: 3px 6px;
-  font-size: 12px;
+  padding: 6px 8px;
+  font-size: 14px;
   font-family: inherit;
   box-sizing: border-box;
 }
@@ -45,19 +45,17 @@
 }
 
 .narrowInput {
-  max-width: 90px;
 }
 
 .wideInput {
-  min-width: 120px;
 }
 
 .narrowCol {
-  width: 120px;
+  width: 100px;
 }
 
 .actionCol {
-  width: 32px;
+  width: 44px;
 }
 
 .emptyRow {
@@ -68,14 +66,14 @@
 }
 
 .removeBtn {
-  width: 24px;
-  height: 24px;
+  width: 44px;
+  height: 44px;
   border: none;
   background: #fee2e2;
   color: #c0392b;
   border-radius: 4px;
   cursor: pointer;
-  font-size: 16px;
+  font-size: 18px;
   line-height: 1;
   display: flex;
   align-items: center;
@@ -89,16 +87,32 @@
 
 .addBtn {
   margin-top: 6px;
-  padding: 4px 12px;
+  padding: 10px 16px;
   background: none;
   border: 1px dashed #2d6a9f;
   border-radius: 4px;
   color: #2d6a9f;
-  font-size: 12px;
+  font-size: 14px;
   cursor: pointer;
   transition: background 0.15s;
+  min-height: 44px;
 }
 
 .addBtn:hover {
   background: #f0f4f8;
+}
+
+@media (max-width: 640px) {
+  .wrapper {
+    overflow-x: auto;
+    -webkit-overflow-scrolling: touch;
+  }
+
+  .table {
+    min-width: 400px;
+  }
+
+  .narrowCol {
+    width: 80px;
+  }
 }
