@@ -2,55 +2,82 @@ import { OnlineUsers } from './OnlineUsers';
 import styles from './Header.module.css';
 
 export function Header({
+  activeTab,
+  onTabChange,
+  // GAP Daily-specific props (only used when activeTab === 'daily')
   displayDate,
   isReadOnly,
   onPrevious,
   onNext,
   canGoNext,
-  user,
-  onLogout,
   onExportExcel,
   onExportPrint,
   onlineUsers,
+  // Shared
+  user,
+  onLogout,
 }) {
+  const isDaily = activeTab === 'daily';
+
   return (
     <header className={styles.header}>
       <div className={styles.left}>
-        <div className={styles.logo}>GAP</div>
+        <div className={styles.logo}>AAP</div>
         <div className={styles.titleBlock}>
-          <h1 className={styles.title}>GAP Daily Update</h1>
-          <p className={styles.subtitle}>Submitted to Executive Team by 5 PM</p>
+          <h1 className={styles.title}>Daily Reports</h1>
+          <p className={styles.subtitle}>Advanced Assembly Products</p>
+        </div>
+
+        {/* Tab buttons — sit next to the logo/title */}
+        <div className={styles.tabNav}>
+          <button
+            className={activeTab === 'daily' ? styles.tabActive : styles.tab}
+            onClick={() => onTabChange('daily')}
+          >
+            GAP Daily
+          </button>
+          <button
+            className={activeTab === 'absentee' ? styles.tabActive : styles.tab}
+            onClick={() => onTabChange('absentee')}
+          >
+            Absentee
+          </button>
         </div>
       </div>
 
-      <div className={styles.center}>
-        <button className={styles.navBtn} onClick={onPrevious} title="Previous day">
-          ‹
-        </button>
-        <div className={styles.dateDisplay}>
-          <span className={styles.dateText}>{displayDate}</span>
-          {isReadOnly && <span className={styles.readOnlyTag}>Read Only</span>}
+      {/* Date navigation — only on GAP Daily tab */}
+      {isDaily && (
+        <div className={styles.center}>
+          <button className={styles.navBtn} onClick={onPrevious} title="Previous day">
+            ‹
+          </button>
+          <div className={styles.dateDisplay}>
+            <span className={styles.dateText}>{displayDate}</span>
+            {isReadOnly && <span className={styles.readOnlyTag}>Read Only</span>}
+          </div>
+          <button
+            className={styles.navBtn}
+            onClick={onNext}
+            disabled={!canGoNext}
+            title="Next day"
+          >
+            ›
+          </button>
         </div>
-        <button
-          className={styles.navBtn}
-          onClick={onNext}
-          disabled={!canGoNext}
-          title="Next day"
-        >
-          ›
-        </button>
-      </div>
+      )}
 
       <div className={styles.right}>
-        <OnlineUsers users={onlineUsers} />
-        <div className={styles.exportMenu}>
-          <button className={styles.exportBtn} onClick={onExportPrint} title="Print / Save PDF">
-            Print PDF
-          </button>
-          <button className={styles.exportBtn} onClick={onExportExcel} title="Export to Excel">
-            Export Excel
-          </button>
-        </div>
+        {isDaily && <OnlineUsers users={onlineUsers} />}
+        {isDaily && (
+          <div className={styles.exportMenu}>
+            <button className={styles.exportBtn} onClick={onExportPrint} title="Print / Save PDF">
+              Print PDF
+            </button>
+            <button className={styles.exportBtn} onClick={onExportExcel} title="Export to Excel">
+              Export Excel
+            </button>
+          </div>
+        )}
         {user && (
           <div className={styles.userArea}>
             <div className={styles.userAvatar} title={user.displayName || user.email}>

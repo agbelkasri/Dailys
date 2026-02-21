@@ -1,4 +1,13 @@
 {
-  "indexes": [],
+  "indexes": [
+    {
+      "collectionGroup": "absences",
+      "queryScope": "COLLECTION",
+      "fields": [
+        { "fieldPath": "date",         "order": "ASCENDING" },
+        { "fieldPath": "employeeName", "order": "ASCENDING" }
+      ]
+    }
+  ],
   "fieldOverrides": []
 }

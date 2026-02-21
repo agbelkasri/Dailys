@@ -1,0 +1,110 @@
+.wrapper {
+  display: flex;
+  flex-direction: column;
+  min-height: calc(100vh - 56px);
+  background: #f1f5f9;
+}
+
+.subNav {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  padding: 12px 20px;
+  background: white;
+  border-bottom: 1px solid #e2e8f0;
+  flex-wrap: wrap;
+}
+
+.tabs {
+  display: flex;
+  gap: 6px;
+  flex-wrap: wrap;
+}
+
+.tab {
+  padding: 6px 14px;
+  height: 34px;
+  background: #f8fafc;
+  border: 1px solid #e2e8f0;
+  color: #475569;
+  border-radius: 6px;
+  font-size: 13px;
+  font-weight: 500;
+  cursor: pointer;
+  transition: all 0.15s;
+  white-space: nowrap;
+}
+
+.tab:hover {
+  background: #e2e8f0;
+  color: #1a3a5c;
+}
+
+.tabActive {
+  padding: 6px 14px;
+  height: 34px;
+  background: #1a3a5c;
+  border: 1px solid #1a3a5c;
+  color: white;
+  border-radius: 6px;
+  font-size: 13px;
+  font-weight: 600;
+  cursor: pointer;
+  white-space: nowrap;
+}
+
+.plantFilterWrap {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.plantLabel {
+  font-size: 13px;
+  font-weight: 500;
+  color: #475569;
+  white-space: nowrap;
+}
+
+.plantSelect {
+  padding: 5px 10px;
+  height: 34px;
+  border: 1px solid #e2e8f0;
+  border-radius: 6px;
+  font-size: 13px;
+  color: #0f172a;
+  background: white;
+  cursor: pointer;
+}
+
+.plantSelect:focus {
+  outline: none;
+  border-color: #1a3a5c;
+}
+
+.content {
+  flex: 1;
+  padding: 20px;
+  max-width: 1200px;
+  margin: 0 auto;
+  width: 100%;
+  box-sizing: border-box;
+}
+
+@media (max-width: 640px) {
+  .subNav {
+    padding: 10px 12px;
+    gap: 8px;
+  }
+
+  .content {
+    padding: 12px;
+  }
+
+  .tab, .tabActive {
+    font-size: 12px;
+    padding: 5px 10px;
+    height: 32px;
+  }
+}

@@ -31,5 +31,23 @@ service cloud.firestore {
         allow update, delete: if false;
       }
     }
+
+    // Absentee records — authenticated users can read, create, update, delete
+    match /absences/{absenceId} {
+      allow read: if request.auth != null;
+      allow create: if request.auth != null
+        && request.resource.data.keys().hasAll([
+             'employeeName', 'plantId', 'date', 'type',
+             'laborType', 'shift', 'reason', 'duration', 'durationHours'
+           ])
+        && request.resource.data.date is string
+        && request.resource.data.plantId in ['EAP', 'GAP', 'SLP']
+        && request.resource.data.type in ['planned', 'unplanned']
+        && request.resource.data.laborType in ['direct', 'indirect']
+        && request.resource.data.shift in ['1st', '2nd']
+        && request.resource.data.durationHours is number;
+      allow update: if request.auth != null;
+      allow delete: if request.auth != null;
+    }
   }
 }

@@ -1,3 +1,4 @@
+import { useState } from 'react';
 import { useAuth } from './hooks/useAuth';
 import { useDateNavigation } from './hooks/useDateNavigation';
 import { usePresence } from './hooks/usePresence';
@@ -5,9 +6,11 @@ import { useReport } from './hooks/useReport';
 import { LoginPage } from './components/auth/LoginPage';
 import { Header } from './components/layout/Header';
 import { DailyReport } from './components/report/DailyReport';
+import { AbsenteeReport } from './components/absentee/AbsenteeReport';
 import { exportToExcel, printReport } from './services/exportService';
 
-function AppContent({ user, logout }) {
+// GAP Daily subscriptions live here so they only run when this tab is active
+function GapDailyTab({ user, activeTab, onTabChange, onLogout }) {
   const {
     selectedDate,
     isReadOnly,
@@ -22,7 +25,6 @@ function AppContent({ user, logout }) {
     user
   );
 
-  // Single subscription shared between Header (export) and DailyReport (display)
   const { sections, loading, error } = useReport(selectedDate);
 
   const handleExportExcel = () => {
@@ -32,13 +34,15 @@ function AppContent({ user, logout }) {
   return (
     <>
       <Header
+        activeTab={activeTab}
+        onTabChange={onTabChange}
         displayDate={displayDate}
         isReadOnly={isReadOnly}
         onPrevious={goToPrevious}
         onNext={goToNext}
         canGoNext={canGoNext}
         user={user}
-        onLogout={logout}
+        onLogout={onLogout}
         onExportExcel={handleExportExcel}
         onExportPrint={printReport}
         onlineUsers={onlineUsers}
@@ -54,6 +58,35 @@ function AppContent({ user, logout }) {
           onFocusSection={setActiveSection}
           onBlurSection={clearActiveSection}
         />
+      </main>
+    </>
+  );
+}
+
+function AppContent({ user, logout }) {
+  const [activeTab, setActiveTab] = useState('daily');
+
+  if (activeTab === 'daily') {
+    return (
+      <GapDailyTab
+        user={user}
+        activeTab={activeTab}
+        onTabChange={setActiveTab}
+        onLogout={logout}
+      />
+    );
+  }
+
+  return (
+    <>
+      <Header
+        activeTab={activeTab}
+        onTabChange={setActiveTab}
+        user={user}
+        onLogout={logout}
+      />
+      <main>
+        <AbsenteeReport user={user} />
       </main>
     </>
   );
