@@ -1,0 +1,9 @@
+# Claude Code local settings
+.claude/
+
+# Auto-generated npm init artifact
+package.json
+package-lock.json
+
+# Windows artifacts
+nul
