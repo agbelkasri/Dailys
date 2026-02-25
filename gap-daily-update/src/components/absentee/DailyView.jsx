@@ -1,6 +1,6 @@
 import { useState, useMemo } from 'react';
-import { format, addDays, subDays, parseISO } from 'date-fns';
-import { getTodayDate } from '../../hooks/useDateNavigation';
+import { format, parseISO } from 'date-fns';
+import { getTodayDate, prevWeekday, nextWeekday } from '../../hooks/useDateNavigation';
 import { useAbsences } from '../../hooks/useAbsences';
 import { deleteAbsence } from '../../services/absenceService';
 import { StatsCard, StatsGrid } from './StatsCard';
@@ -31,10 +31,10 @@ export function DailyView({ plantFilter }) {
   }, [filtered]);
 
   function goToPrev() {
-    setSelectedDate(format(subDays(parseISO(selectedDate), 1), 'yyyy-MM-dd'));
+    setSelectedDate(prevWeekday(selectedDate));
   }
   function goToNext() {
-    const next = format(addDays(parseISO(selectedDate), 1), 'yyyy-MM-dd');
+    const next = nextWeekday(selectedDate);
     if (next <= getTodayDate()) setSelectedDate(next);
   }
   function goToToday() {
@@ -43,7 +43,7 @@ export function DailyView({ plantFilter }) {
 
   const displayDate = format(parseISO(selectedDate), 'EEEE, MMMM d, yyyy');
   const isToday = selectedDate === getTodayDate();
-  const canGoNext = selectedDate < getTodayDate();
+  const canGoNext = nextWeekday(selectedDate) <= getTodayDate();
 
   async function handleDelete(id, name) {
     if (!window.confirm(`Delete absence for ${name}?`)) return;
