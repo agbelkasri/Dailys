@@ -9,7 +9,7 @@
 .card {
   background: white;
   border-radius: 12px;
-  padding: 32px 24px;
+  padding: 40px 32px;
   width: 100%;
   max-width: 380px;
   text-align: center;
@@ -47,72 +47,44 @@
   margin: 0 0 32px;
 }
 
-.form {
+/* Microsoft-branded sign-in button */
+.msButton {
   display: flex;
-  flex-direction: column;
-  gap: 16px;
-  text-align: left;
-}
-
-.field {
-  display: flex;
-  flex-direction: column;
-  gap: 6px;
-}
-
-.label {
-  font-size: 13px;
-  font-weight: 600;
-  color: #444;
-}
-
-.input {
-  padding: 10px 12px;
-  border: 1px solid #ddd;
-  border-radius: 6px;
-  font-size: 14px;
-  font-family: inherit;
-  transition: border-color 0.15s;
-}
-
-.input:focus {
-  outline: none;
-  border-color: #2d6a9f;
-  box-shadow: 0 0 0 3px rgba(45, 106, 159, 0.15);
-}
-
-.submitButton {
+  align-items: center;
+  justify-content: center;
+  gap: 12px;
   width: 100%;
   padding: 12px 20px;
-  background: #2d6a9f;
-  color: white;
-  border: none;
-  border-radius: 6px;
+  background: #fff;
+  color: #1a1a1a;
+  border: 1px solid #8c8c8c;
+  border-radius: 4px;
   font-size: 15px;
   font-weight: 600;
+  font-family: inherit;
   cursor: pointer;
-  transition: background 0.2s;
-  margin-top: 4px;
+  transition: background 0.15s, border-color 0.15s;
   min-height: 48px;
 }
 
-.submitButton:hover:not(:disabled) {
-  background: #1a3a5c;
+.msButton:hover:not(:disabled) {
+  background: #f3f3f3;
+  border-color: #1a3a5c;
 }
 
-.submitButton:disabled {
+.msButton:disabled {
   opacity: 0.6;
   cursor: not-allowed;
 }
 
 .error {
+  margin-top: 20px;
   padding: 10px;
   background: #fff0f0;
   border: 1px solid #ffcccc;
   border-radius: 6px;
   color: #c0392b;
   font-size: 13px;
-  margin: 0;
 }
 
 @media (max-width: 480px) {

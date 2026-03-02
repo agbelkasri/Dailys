@@ -1,15 +1,23 @@
 import { useState } from 'react';
 import styles from './LoginPage.module.css';
 
-export function LoginPage({ onLogin, error }) {
-  const [email, setEmail] = useState('');
-  const [password, setPassword] = useState('');
+function MicrosoftLogo() {
+  return (
+    <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 21 21" aria-hidden="true">
+      <rect x="1"  y="1"  width="9" height="9" fill="#f25022" />
+      <rect x="11" y="1"  width="9" height="9" fill="#7fba00" />
+      <rect x="1"  y="11" width="9" height="9" fill="#00a4ef" />
+      <rect x="11" y="11" width="9" height="9" fill="#ffb900" />
+    </svg>
+  );
+}
+
+export function LoginPage({ onLoginWithMicrosoft, error }) {
   const [loading, setLoading] = useState(false);
 
-  const handleSubmit = async (e) => {
-    e.preventDefault();
+  const handleMicrosoft = async () => {
     setLoading(true);
-    await onLogin(email, password);
+    await onLoginWithMicrosoft();
     setLoading(false);
   };
 
@@ -17,46 +25,21 @@ export function LoginPage({ onLogin, error }) {
     <div className={styles.container}>
       <div className={styles.card}>
         <div className={styles.logo}>
-          <div className={styles.logoIcon}>GAP</div>
+          <div className={styles.logoIcon}>AAP</div>
         </div>
-        <h1 className={styles.title}>GAP Daily Update</h1>
-        <p className={styles.subtitle}>Submitted to Executive Team by 5 PM</p>
+        <h1 className={styles.title}>Daily Reports</h1>
+        <p className={styles.subtitle}>Sign in with your company account to continue</p>
 
-        <form onSubmit={handleSubmit} className={styles.form}>
-          <div className={styles.field}>
-            <label className={styles.label}>Email</label>
-            <input
-              type="email"
-              className={styles.input}
-              value={email}
-              onChange={(e) => setEmail(e.target.value)}
-              placeholder="you@company.com"
-              required
-              autoFocus
-            />
-          </div>
-          <div className={styles.field}>
-            <label className={styles.label}>Password</label>
-            <input
-              type="password"
-              className={styles.input}
-              value={password}
-              onChange={(e) => setPassword(e.target.value)}
-              placeholder="••••••••"
-              required
-            />
-          </div>
+        <button
+          className={styles.msButton}
+          onClick={handleMicrosoft}
+          disabled={loading}
+        >
+          <MicrosoftLogo />
+          <span>{loading ? 'Signing in…' : 'Sign in with Microsoft'}</span>
+        </button>
 
-          {error && <p className={styles.error}>{error}</p>}
-
-          <button
-            type="submit"
-            className={styles.submitButton}
-            disabled={loading}
-          >
-            {loading ? 'Signing in...' : 'Sign In'}
-          </button>
-        </form>
+        {error && <p className={styles.error}>{error}</p>}
       </div>
     </div>
   );

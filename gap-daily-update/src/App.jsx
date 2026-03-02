@@ -93,7 +93,7 @@ function AppContent({ user, logout }) {
 }
 
 export default function App() {
-  const { user, loading, error, login, logout } = useAuth();
+  const { user, loading, error, loginWithMicrosoft, logout } = useAuth();
 
   if (loading) {
     return (
@@ -111,7 +111,7 @@ export default function App() {
   }
 
   if (!user) {
-    return <LoginPage onLogin={(email, password) => login(email, password)} error={error} />;
+    return <LoginPage onLoginWithMicrosoft={loginWithMicrosoft} error={error} />;
   }
 
   return <AppContent user={user} logout={logout} />;
