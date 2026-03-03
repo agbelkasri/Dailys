@@ -1,11 +1,43 @@
 import { v4 as uuidv4 } from 'uuid';
+import { STATUS_COLORS, STATUS_TEXT_COLORS } from '../../constants/colors';
 import styles from './SubTable.module.css';
+
+const STATUS_OPTIONS = ['', 'G', 'Y', 'R'];
+
+function RowStatusCell({ value, onChange, readOnly }) {
+  const color = STATUS_COLORS[value] ?? STATUS_COLORS[''];
+  const textColor = STATUS_TEXT_COLORS[value] ?? STATUS_TEXT_COLORS[''];
+
+  if (readOnly) {
+    return (
+      <span
+        className={styles.statusBadge}
+        style={{ backgroundColor: color, color: textColor }}
+      >
+        {value || '—'}
+      </span>
+    );
+  }
+
+  return (
+    <select
+      className={styles.statusSelect}
+      value={value || ''}
+      onChange={(e) => onChange(e.target.value)}
+      style={{ borderColor: color, backgroundColor: value ? color : undefined, color: value ? textColor : undefined }}
+    >
+      {STATUS_OPTIONS.map((opt) => (
+        <option key={opt} value={opt}>{opt || '—'}</option>
+      ))}
+    </select>
+  );
+}
 
 export function QualityTable({ data, onChange, readOnly }) {
   const rows = data?.length ? data : [];
 
   const addRow = () => {
-    onChange([...rows, { id: uuidv4(), workcenterCode: '', partNumber: '', statusNotes: '' }]);
+    onChange([...rows, { id: uuidv4(), status: '', workcenterCode: '', partNumber: '', statusNotes: '' }]);
   };
 
   const updateRow = (id, field, value) => {
@@ -21,6 +53,7 @@ export function QualityTable({ data, onChange, readOnly }) {
       <table className={styles.table}>
         <thead>
           <tr>
+            <th className={styles.statusCol}>Status</th>
             <th className={styles.narrowCol}>Workcenter Code</th>
             <th className={styles.narrowCol}>Part No</th>
             <th>Status Notes</th>
@@ -30,17 +63,22 @@ export function QualityTable({ data, onChange, readOnly }) {
         <tbody>
           {rows.length === 0 && (
             <tr>
-              <td colSpan={readOnly ? 3 : 4} className={styles.emptyRow}>
+              <td colSpan={readOnly ? 4 : 5} className={styles.emptyRow}>
                 {readOnly ? 'No entries' : 'No rows yet — click Add Row'}
               </td>
             </tr>
           )}
           {rows.map((row) => (
             <tr key={row.id}>
+              <td className={styles.statusCol}>
+                <RowStatusCell
+                  value={row.status}
+                  onChange={(v) => updateRow(row.id, 'status', v)}
+                  readOnly={readOnly}
+                />
+              </td>
               <td>
-                {readOnly ? (
-                  row.workcenterCode
-                ) : (
+                {readOnly ? row.workcenterCode : (
                   <input
                     value={row.workcenterCode}
                     onChange={(e) => updateRow(row.id, 'workcenterCode', e.target.value)}
@@ -50,9 +88,7 @@ export function QualityTable({ data, onChange, readOnly }) {
                 )}
               </td>
               <td>
-                {readOnly ? (
-                  row.partNumber
-                ) : (
+                {readOnly ? row.partNumber : (
                   <input
                     value={row.partNumber}
                     onChange={(e) => updateRow(row.id, 'partNumber', e.target.value)}
@@ -62,9 +98,7 @@ export function QualityTable({ data, onChange, readOnly }) {
                 )}
               </td>
               <td>
-                {readOnly ? (
-                  row.statusNotes
-                ) : (
+                {readOnly ? row.statusNotes : (
                   <input
                     value={row.statusNotes}
                     onChange={(e) => updateRow(row.id, 'statusNotes', e.target.value)}

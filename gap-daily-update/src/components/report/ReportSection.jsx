@@ -86,8 +86,9 @@ export function ReportSection({ date, sectionDef, sectionData, readOnly, presenc
     handleBlur,
   } = useSection({ date, sectionDef, sectionData, onFocusSection, onBlurSection });
 
+  const isSubTable = sectionDef.sectionType !== SECTION_TYPES.NORMAL;
   const status = sectionData?.status || '';
-  const rowBorderColor = STATUS_COLORS[status];
+  const rowBorderColor = STATUS_COLORS[isSubTable ? '' : status];
 
   return (
     <tr
@@ -97,7 +98,9 @@ export function ReportSection({ date, sectionDef, sectionData, readOnly, presenc
       <td className={styles.responsible}>{sectionDef.responsible}</td>
       <td className={styles.measurable}>{sectionDef.measurable}</td>
       <td className={styles.status}>
-        <StatusBadge value={status} onChange={handleStatusChange} readOnly={readOnly} />
+        {!isSubTable && (
+          <StatusBadge value={status} onChange={handleStatusChange} readOnly={readOnly} />
+        )}
       </td>
       <td className={styles.content}>
         <SectionPresence presenceMap={presenceMap} sectionId={sectionDef.id} />
@@ -135,8 +138,9 @@ export function ReportSectionCard({ date, sectionDef, sectionData, readOnly, pre
     handleBlur,
   } = useSection({ date, sectionDef, sectionData, onFocusSection, onBlurSection });
 
+  const isSubTable = sectionDef.sectionType !== SECTION_TYPES.NORMAL;
   const status = sectionData?.status || '';
-  const borderColor = STATUS_COLORS[status];
+  const borderColor = STATUS_COLORS[isSubTable ? '' : status];
 
   return (
     <div className={styles.card} style={{ borderLeftColor: borderColor }}>
@@ -145,7 +149,9 @@ export function ReportSectionCard({ date, sectionDef, sectionData, readOnly, pre
           <div className={styles.cardMeasurable}>{sectionDef.measurable}</div>
           <div className={styles.cardResponsible}>{sectionDef.responsible}</div>
         </div>
-        <StatusBadge value={status} onChange={handleStatusChange} readOnly={readOnly} />
+        {!isSubTable && (
+          <StatusBadge value={status} onChange={handleStatusChange} readOnly={readOnly} />
+        )}
       </div>
       <div className={styles.cardBody}>
         <SectionPresence presenceMap={presenceMap} sectionId={sectionDef.id} />
