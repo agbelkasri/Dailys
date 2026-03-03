@@ -54,6 +54,40 @@
   width: 100px;
 }
 
+.statusCol {
+  width: 72px;
+  text-align: center;
+}
+
+.statusSelect {
+  width: 60px;
+  padding: 5px 4px;
+  border: 2px solid #e0e0e0;
+  border-radius: 4px;
+  font-size: 13px;
+  font-weight: 700;
+  font-family: inherit;
+  cursor: pointer;
+  text-align: center;
+  appearance: none;
+  -webkit-appearance: none;
+}
+
+.statusSelect:focus {
+  outline: none;
+  box-shadow: 0 0 0 2px rgba(45, 106, 159, 0.2);
+}
+
+.statusBadge {
+  display: inline-block;
+  padding: 3px 10px;
+  border-radius: 4px;
+  font-size: 13px;
+  font-weight: 700;
+  text-align: center;
+  min-width: 32px;
+}
+
 .actionCol {
   width: 44px;
 }

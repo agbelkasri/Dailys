@@ -43,7 +43,7 @@ export const SECTIONS = [
   },
   {
     id: 'customer-invty-status',
-    measurable: 'Customer Invty Status',
+    measurable: 'Customer Inventory Status',
     responsible: 'Michelle',
     sectionType: SECTION_TYPES.CUSTOMER_INVENTORY,
     sortOrder: 5,

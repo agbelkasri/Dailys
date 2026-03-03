@@ -1,5 +1,37 @@
 import { v4 as uuidv4 } from 'uuid';
+import { STATUS_COLORS, STATUS_TEXT_COLORS } from '../../constants/colors';
 import styles from './SubTable.module.css';
+
+const STATUS_OPTIONS = ['', 'G', 'Y', 'R'];
+
+function RowStatusCell({ value, onChange, readOnly }) {
+  const color = STATUS_COLORS[value] ?? STATUS_COLORS[''];
+  const textColor = STATUS_TEXT_COLORS[value] ?? STATUS_TEXT_COLORS[''];
+
+  if (readOnly) {
+    return (
+      <span
+        className={styles.statusBadge}
+        style={{ backgroundColor: color, color: textColor }}
+      >
+        {value || '—'}
+      </span>
+    );
+  }
+
+  return (
+    <select
+      className={styles.statusSelect}
+      value={value || ''}
+      onChange={(e) => onChange(e.target.value)}
+      style={{ borderColor: color, backgroundColor: value ? color : undefined, color: value ? textColor : undefined }}
+    >
+      {STATUS_OPTIONS.map((opt) => (
+        <option key={opt} value={opt}>{opt || '—'}</option>
+      ))}
+    </select>
+  );
+}
 
 export function CustomerInventoryTable({ data, onChange, readOnly }) {
   const rows = data?.length ? data : [];
@@ -7,7 +39,7 @@ export function CustomerInventoryTable({ data, onChange, readOnly }) {
   const addRow = () => {
     onChange([
       ...rows,
-      { id: uuidv4(), customer: '', programNumber: '', partsSupplied: '', coverageNotes: '' },
+      { id: uuidv4(), customer: '', programNumber: '', partsSupplied: '', coverageNotes: '', status: '' },
     ]);
   };
 
@@ -24,6 +56,7 @@ export function CustomerInventoryTable({ data, onChange, readOnly }) {
       <table className={styles.table}>
         <thead>
           <tr>
+            <th className={styles.statusCol}>Status</th>
             <th>Customer</th>
             <th>Program #</th>
             <th># Parts Supplied</th>
@@ -34,17 +67,22 @@ export function CustomerInventoryTable({ data, onChange, readOnly }) {
         <tbody>
           {rows.length === 0 && (
             <tr>
-              <td colSpan={readOnly ? 4 : 5} className={styles.emptyRow}>
+              <td colSpan={readOnly ? 5 : 6} className={styles.emptyRow}>
                 {readOnly ? 'No entries' : 'No rows yet — click Add Row'}
               </td>
             </tr>
           )}
           {rows.map((row) => (
             <tr key={row.id}>
+              <td className={styles.statusCol}>
+                <RowStatusCell
+                  value={row.status}
+                  onChange={(v) => updateRow(row.id, 'status', v)}
+                  readOnly={readOnly}
+                />
+              </td>
               <td>
-                {readOnly ? (
-                  row.customer
-                ) : (
+                {readOnly ? row.customer : (
                   <input
                     value={row.customer}
                     onChange={(e) => updateRow(row.id, 'customer', e.target.value)}
@@ -53,9 +91,7 @@ export function CustomerInventoryTable({ data, onChange, readOnly }) {
                 )}
               </td>
               <td>
-                {readOnly ? (
-                  row.programNumber
-                ) : (
+                {readOnly ? row.programNumber : (
                   <input
                     value={row.programNumber}
                     onChange={(e) => updateRow(row.id, 'programNumber', e.target.value)}
@@ -64,9 +100,7 @@ export function CustomerInventoryTable({ data, onChange, readOnly }) {
                 )}
               </td>
               <td>
-                {readOnly ? (
-                  row.partsSupplied
-                ) : (
+                {readOnly ? row.partsSupplied : (
                   <input
                     value={row.partsSupplied}
                     onChange={(e) => updateRow(row.id, 'partsSupplied', e.target.value)}
@@ -76,9 +110,7 @@ export function CustomerInventoryTable({ data, onChange, readOnly }) {
                 )}
               </td>
               <td>
-                {readOnly ? (
-                  row.coverageNotes
-                ) : (
+                {readOnly ? row.coverageNotes : (
                   <input
                     value={row.coverageNotes}
                     onChange={(e) => updateRow(row.id, 'coverageNotes', e.target.value)}
