@@ -26,6 +26,16 @@ export const DURATIONS = [
   { value: 'custom',  label: 'Custom Hours',                hours: null },
 ];
 
+export const EMPLOYMENT_TYPES = [
+  { value: 'full_time', label: 'Full Time' },
+  { value: 'part_time', label: 'Part Time' },
+];
+
+export const ABSENCE_TERMS = [
+  { value: 'short_term', label: 'Short Term' },
+  { value: 'long_term',  label: 'Long Term'  },
+];
+
 export const ABSENCE_REASONS = [
   { value: 'vacation',         label: 'Vacation' },
   { value: 'sick',             label: 'Sick' },

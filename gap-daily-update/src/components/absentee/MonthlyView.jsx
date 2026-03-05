@@ -55,6 +55,10 @@ export function MonthlyView({ plantFilter }) {
     const indirect  = absences.filter(a => a.laborType === 'indirect').length;
     const shift1    = absences.filter(a => (a.shift || '1st') === '1st').length;
     const shift2    = absences.filter(a => a.shift === '2nd').length;
+    const fullTime  = absences.filter(a => (a.employmentType || 'full_time') === 'full_time').length;
+    const partTime  = absences.filter(a => a.employmentType === 'part_time').length;
+    const shortTerm = absences.filter(a => (a.absenceTerm || 'short_term') === 'short_term').length;
+    const longTerm  = absences.filter(a => a.absenceTerm === 'long_term').length;
     const workDays  = getWorkingDays(year, month);
     const avgPerDay = workDays > 0 ? (total / workDays).toFixed(1) : '0';
     const totalHours = absences.reduce((s, a) => s + (a.durationHours || 0), 0);
@@ -148,7 +152,7 @@ export function MonthlyView({ plantFilter }) {
       }));
 
     return {
-      total, planned, unplanned, direct, indirect, shift1, shift2,
+      total, planned, unplanned, direct, indirect, shift1, shift2, fullTime, partTime, shortTerm, longTerm,
       avgPerDay, totalHours, peakLabel, momLabel,
       topReason: REASON_LABELS[topReason] || topReason,
       byDay, dowCounts, dailyBars, topAbsentees,
@@ -249,6 +253,34 @@ export function MonthlyView({ plantFilter }) {
                   segments={[
                     { label: '1st Shift', value: data.shift1, color: '#065f46' },
                     { label: '2nd Shift', value: data.shift2, color: '#7c3aed' },
+                  ]}
+                  centerText={String(data.total)}
+                />
+              </div>
+            </div>
+          </div>
+
+          <div className={styles.chartGrid}>
+            <div className={styles.chartCard}>
+              <div className={styles.cardHeader}>Full Time vs Part Time</div>
+              <div className={styles.cardBody}>
+                <DonutChart
+                  segments={[
+                    { label: 'Full Time', value: data.fullTime, color: '#0f766e' },
+                    { label: 'Part Time', value: data.partTime, color: '#f59e0b' },
+                  ]}
+                  centerText={String(data.total)}
+                />
+              </div>
+            </div>
+
+            <div className={styles.chartCard}>
+              <div className={styles.cardHeader}>Short Term vs Long Term</div>
+              <div className={styles.cardBody}>
+                <DonutChart
+                  segments={[
+                    { label: 'Short Term', value: data.shortTerm, color: '#2563eb' },
+                    { label: 'Long Term',  value: data.longTerm,  color: '#dc2626' },
                   ]}
                   centerText={String(data.total)}
                 />

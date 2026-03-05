@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { PLANTS, ABSENCE_TYPES, LABOR_TYPES, SHIFTS, DURATIONS, ABSENCE_REASONS, getHoursForDuration } from '../../constants/absences';
+import { PLANTS, ABSENCE_TYPES, LABOR_TYPES, SHIFTS, DURATIONS, ABSENCE_REASONS, EMPLOYMENT_TYPES, ABSENCE_TERMS, getHoursForDuration } from '../../constants/absences';
 import { updateAbsence } from '../../services/absenceService';
 import styles from './AbsenceFormModal.module.css';
 
@@ -9,6 +9,8 @@ export function AbsenceFormModal({ absence, onClose }) {
     plantId: absence.plantId || 'GAP',
     date: absence.date || '',
     type: absence.type || 'unplanned',
+    employmentType: absence.employmentType || 'full_time',
+    absenceTerm: absence.absenceTerm || 'short_term',
     laborType: absence.laborType || 'direct',
     shift: absence.shift || '1st',
     reason: absence.reason || 'sick',
@@ -86,6 +88,31 @@ export function AbsenceFormModal({ absence, onClose }) {
                 {ABSENCE_TYPES.map(t => (
                   <label key={t.value} className={styles.radio}>
                     <input type="radio" name="type" value={t.value} checked={form.type === t.value} onChange={handleChange} />
+                    {t.label}
+                  </label>
+                ))}
+              </div>
+            </div>
+          </div>
+
+          <div className={styles.row}>
+            <div className={styles.group}>
+              <label className={styles.label}>Employment Type *</label>
+              <div className={styles.radioGroup}>
+                {EMPLOYMENT_TYPES.map(t => (
+                  <label key={t.value} className={styles.radio}>
+                    <input type="radio" name="employmentType" value={t.value} checked={form.employmentType === t.value} onChange={handleChange} />
+                    {t.label}
+                  </label>
+                ))}
+              </div>
+            </div>
+            <div className={styles.group}>
+              <label className={styles.label}>Absence Term *</label>
+              <div className={styles.radioGroup}>
+                {ABSENCE_TERMS.map(t => (
+                  <label key={t.value} className={styles.radio}>
+                    <input type="radio" name="absenceTerm" value={t.value} checked={form.absenceTerm === t.value} onChange={handleChange} />
                     {t.label}
                   </label>
                 ))}

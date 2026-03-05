@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { PLANTS, ABSENCE_TYPES, LABOR_TYPES, SHIFTS, DURATIONS, ABSENCE_REASONS, getHoursForDuration } from '../../constants/absences';
+import { PLANTS, ABSENCE_TYPES, LABOR_TYPES, SHIFTS, DURATIONS, ABSENCE_REASONS, EMPLOYMENT_TYPES, ABSENCE_TERMS, getHoursForDuration } from '../../constants/absences';
 import { addAbsence } from '../../services/absenceService';
 import { getTodayDate } from '../../hooks/useDateNavigation';
 import styles from './SubmitView.module.css';
@@ -9,6 +9,8 @@ const EMPTY_FORM = {
   plantId: 'GAP',
   date: getTodayDate(),
   type: 'unplanned',
+  employmentType: 'full_time',
+  absenceTerm: 'short_term',
   laborType: 'direct',
   shift: '1st',
   reason: 'sick',
@@ -97,6 +99,31 @@ export function SubmitView({ onSuccess, prefill = null }) {
               {ABSENCE_TYPES.map(t => (
                 <label key={t.value} className={styles.radio}>
                   <input type="radio" name="type" value={t.value} checked={form.type === t.value} onChange={handleChange} />
+                  {t.label}
+                </label>
+              ))}
+            </div>
+          </div>
+        </div>
+
+        <div className={styles.row}>
+          <div className={styles.group}>
+            <label className={styles.label}>Employment Type *</label>
+            <div className={styles.radioGroup}>
+              {EMPLOYMENT_TYPES.map(t => (
+                <label key={t.value} className={styles.radio}>
+                  <input type="radio" name="employmentType" value={t.value} checked={form.employmentType === t.value} onChange={handleChange} />
+                  {t.label}
+                </label>
+              ))}
+            </div>
+          </div>
+          <div className={styles.group}>
+            <label className={styles.label}>Absence Term *</label>
+            <div className={styles.radioGroup}>
+              {ABSENCE_TERMS.map(t => (
+                <label key={t.value} className={styles.radio}>
+                  <input type="radio" name="absenceTerm" value={t.value} checked={form.absenceTerm === t.value} onChange={handleChange} />
                   {t.label}
                 </label>
               ))}
