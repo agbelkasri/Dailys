@@ -1,7 +1,7 @@
 .card {
-  background: white;
+  background: var(--bg-surface);
   border-radius: 8px;
-  box-shadow: 0 1px 4px rgba(0,0,0,0.08);
+  box-shadow: 0 1px 4px var(--shadow-sm);
   padding: 24px;
   max-width: 700px;
 }
@@ -10,7 +10,7 @@
   margin: 0 0 20px;
   font-size: 18px;
   font-weight: 700;
-  color: #0f172a;
+  color: var(--text-heading);
 }
 
 .form {
@@ -34,18 +34,18 @@
 .label {
   font-size: 13px;
   font-weight: 600;
-  color: #374151;
+  color: var(--text-secondary);
 }
 
 .input,
 .select {
   padding: 8px 10px;
   height: 38px;
-  border: 1px solid #e2e8f0;
+  border: 1px solid var(--border-default);
   border-radius: 6px;
   font-size: 14px;
-  color: #0f172a;
-  background: white;
+  color: var(--text-primary);
+  background: var(--bg-surface);
   width: 100%;
   box-sizing: border-box;
 }
@@ -53,17 +53,17 @@
 .input:focus,
 .select:focus {
   outline: none;
-  border-color: #1a3a5c;
-  box-shadow: 0 0 0 2px rgba(26,58,92,0.1);
+  border-color: var(--plant-primary);
+  box-shadow: 0 0 0 2px rgba(var(--plant-primary-rgb),0.1);
 }
 
 .textarea {
   padding: 8px 10px;
-  border: 1px solid #e2e8f0;
+  border: 1px solid var(--border-default);
   border-radius: 6px;
   font-size: 14px;
-  color: #0f172a;
-  background: white;
+  color: var(--text-primary);
+  background: var(--bg-surface);
   width: 100%;
   box-sizing: border-box;
   resize: vertical;
@@ -72,7 +72,7 @@
 
 .textarea:focus {
   outline: none;
-  border-color: #1a3a5c;
+  border-color: var(--plant-primary);
 }
 
 .radioGroup {
@@ -88,7 +88,7 @@
   align-items: center;
   gap: 6px;
   font-size: 13px;
-  color: #374151;
+  color: var(--text-secondary);
   cursor: pointer;
 }
 
@@ -100,7 +100,7 @@
 
 .hoursLabel {
   font-size: 13px;
-  color: #475569;
+  color: var(--text-secondary);
 }
 
 .error {
@@ -121,18 +121,18 @@
 .submitBtn {
   padding: 10px 24px;
   height: 40px;
-  background: #1a3a5c;
+  background: var(--plant-primary);
   border: none;
   color: white;
   border-radius: 6px;
   font-size: 14px;
   font-weight: 600;
   cursor: pointer;
-  transition: background 0.15s;
+  transition: opacity 0.15s;
 }
 
 .submitBtn:hover:not(:disabled) {
-  background: #2d5a8e;
+  opacity: 0.88;
 }
 
 .submitBtn:disabled {

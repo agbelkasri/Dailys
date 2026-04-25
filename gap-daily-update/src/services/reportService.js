@@ -1,4 +1,4 @@
-import { doc, updateDoc, addDoc, collection, serverTimestamp } from 'firebase/firestore';
+import { doc, setDoc, addDoc, collection, serverTimestamp } from 'firebase/firestore';
 import { db, auth } from '../firebase';
 
 function getCurrentUser() {
@@ -10,11 +10,11 @@ function getCurrentUser() {
   };
 }
 
-async function writeAuditLog(date, sectionId, field, newValue, user) {
+async function writeAuditLog(reportId, sectionId, field, newValue, user) {
   try {
-    const logRef = collection(db, 'reports', date, 'auditLog');
+    // Nested under the section so queries need no composite index
+    const logRef = collection(db, 'reports', reportId, 'sections', sectionId, 'auditLog');
     await addDoc(logRef, {
-      sectionId,
       field,
       newValue,
       editedBy: user,
@@ -26,36 +26,42 @@ async function writeAuditLog(date, sectionId, field, newValue, user) {
   }
 }
 
-export async function updateSectionStatus(date, sectionId, status) {
+export async function updateSectionStatus(reportId, sectionId, status) {
   const user = getCurrentUser();
-  const ref = doc(db, 'reports', date, 'sections', sectionId);
-  await updateDoc(ref, {
+  const ref = doc(db, 'reports', reportId, 'sections', sectionId);
+  await setDoc(ref, {
     status,
     lastEditedBy: user.displayName,
     lastEditedAt: serverTimestamp(),
-  });
-  await writeAuditLog(date, sectionId, 'status', status, user);
+  }, { merge: true });
+  await writeAuditLog(reportId, sectionId, 'status', status, user);
 }
 
-export async function updateSectionComments(date, sectionId, comments) {
+export async function updateSectionComments(reportId, sectionId, comments) {
   const user = getCurrentUser();
-  const ref = doc(db, 'reports', date, 'sections', sectionId);
-  await updateDoc(ref, {
+  const ref = doc(db, 'reports', reportId, 'sections', sectionId);
+  await setDoc(ref, {
     comments,
     lastEditedBy: user.displayName,
     lastEditedAt: serverTimestamp(),
-  });
-  // Audit log for comments is intentionally omitted to avoid high write volume
-  // The lastEditedBy + lastEditedAt fields serve as the lightweight audit trail for comments
+  }, { merge: true });
+  await writeAuditLog(reportId, sectionId, 'comments', comments, user);
 }
 
-export async function updateSubTableData(date, sectionId, subTableData) {
+export async function updateSubTableData(reportId, sectionId, subTableData) {
   const user = getCurrentUser();
-  const ref = doc(db, 'reports', date, 'sections', sectionId);
-  await updateDoc(ref, {
+  const ref = doc(db, 'reports', reportId, 'sections', sectionId);
+  await setDoc(ref, {
     subTableData,
     lastEditedBy: user.displayName,
     lastEditedAt: serverTimestamp(),
-  });
-  await writeAuditLog(date, sectionId, 'subTableData', subTableData, user);
+  }, { merge: true });
+  await writeAuditLog(reportId, sectionId, 'subTableData', subTableData, user);
+}
+
+export async function toggleSectionCarryForward(reportId, sectionId, carryForward) {
+  const user = getCurrentUser();
+  const ref = doc(db, 'reports', reportId, 'sections', sectionId);
+  await setDoc(ref, { carryForward }, { merge: true });
+  await writeAuditLog(reportId, sectionId, 'carryForward', carryForward, user);
 }

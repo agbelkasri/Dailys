@@ -1,8 +1,58 @@
+.wrapper {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  min-width: 0;
+  max-width: 100%;
+}
+
+.toolbar {
+  display: flex;
+  gap: 4px;
+}
+
+/* ── Shared toolbar button base ───────────────────────────────────────────── */
+.boldBtn,
+.redBtn,
+.highlightBtn {
+  padding: 2px 7px;
+  font-size: 13px;
+  font-family: inherit;
+  background: var(--bg-muted);
+  border: 1px solid var(--border-strong);
+  border-radius: 3px;
+  cursor: pointer;
+  line-height: 1.4;
+  color: var(--text-primary);
+  transition: background 0.12s, border-color 0.12s;
+}
+
+.boldBtn:hover,
+.redBtn:hover,
+.highlightBtn:hover {
+  background: var(--bg-subtle);
+  border-color: var(--plant-accent);
+}
+
+/* ── Red button ───────────────────────────────────────────────────────────── */
+.redLabel {
+  color: rgb(239, 68, 68);
+}
+
+/* ── Highlight button ─────────────────────────────────────────────────────── */
+.highlightLabel {
+  background-color: rgb(254, 240, 138);
+  color: #111;
+  padding: 0 3px;
+  border-radius: 2px;
+}
+
+/* ── Textarea (plain text mode) ───────────────────────────────────────────── */
 .textarea {
   width: 100%;
   min-height: 72px;
   padding: 10px 12px;
-  border: 1px solid #d0d0d0;
+  border: 1px solid var(--border-strong);
   border-radius: 4px;
   font-size: 15px;
   font-family: inherit;
@@ -11,24 +61,76 @@
   overflow: hidden;
   box-sizing: border-box;
   transition: border-color 0.15s;
+  word-break: break-word;
+  overflow-wrap: break-word;
 }
 
 .textarea:focus {
   outline: none;
-  border-color: #2d6a9f;
-  box-shadow: 0 0 0 2px rgba(45, 106, 159, 0.15);
+  border-color: var(--plant-accent);
+  box-shadow: 0 0 0 2px rgba(var(--plant-accent-rgb), 0.15);
 }
 
+/* ── Read-only display ────────────────────────────────────────────────────── */
 .readOnly {
   min-height: 40px;
   padding: 6px 4px;
   font-size: 15px;
   line-height: 1.5;
-  color: #333;
+  color: var(--text-primary);
   white-space: pre-wrap;
 }
 
 .empty {
-  color: #bbb;
+  color: var(--text-faint);
   font-style: italic;
+}
+
+/* ── Rich editor (contentEditable) ───────────────────────────────────────── */
+.richEdit {
+  width: 100%;
+  max-width: 100%;
+  min-height: 72px;
+  padding: 10px 12px;
+  border: 1px solid var(--border-strong);
+  border-radius: 4px;
+  font-size: 15px;
+  font-family: inherit;
+  line-height: 1.5;
+  box-sizing: border-box;
+  transition: border-color 0.15s;
+  outline: none;
+  white-space: pre-wrap;
+  word-break: break-word;
+  overflow-wrap: break-word;
+  /* Explicit tokens — contentEditable bypasses CSS inheritance in some browsers */
+  background-color: var(--bg-surface);
+  color: var(--text-primary);
+}
+
+.richEdit:focus {
+  border-color: var(--plant-accent);
+  box-shadow: 0 0 0 2px rgba(var(--plant-accent-rgb), 0.15);
+}
+
+.richEdit:empty::before {
+  content: 'Add comments...';
+  color: var(--text-faint);
+}
+
+/* ── Dark-mode text colour ────────────────────────────────────────────────────
+   We rely on JS (stripUnintentionalColors + MutationObserver) to remove the
+   inline color="rgb(0,0,0)" that Chrome inserts when bold is applied.
+   The !important on the parent locks in the base token; children inherit it
+   unless they carry an intentional inline colour (red or yellow).
+────────────────────────────────────────────────────────────────────────────── */
+:global([data-theme="dark"]) .richEdit,
+:global([data-theme="dark"]) .readOnly {
+  color: var(--text-primary) !important;
+}
+
+/* Yellow highlight in dark mode: force dark text so it's actually readable */
+:global([data-theme="dark"]) .richEdit [style*="background-color"],
+:global([data-theme="dark"]) .readOnly [style*="background-color"] {
+  color: #111827 !important;
 }

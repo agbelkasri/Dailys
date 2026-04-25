@@ -9,7 +9,7 @@ import {
 } from 'firebase/database';
 import { rtdb } from '../firebase';
 
-export function usePresence(date, user) {
+export function usePresence(date, plantId, user) {
   const [presenceMap, setPresenceMap] = useState({});
 
   useEffect(() => {
@@ -26,6 +26,7 @@ export function usePresence(date, user) {
           displayName: user.displayName || user.email,
           photoURL: user.photoURL || null,
           currentDate: date,
+          currentPlant: plantId,
           currentSection: null,
           lastSeen: serverTimestamp(),
           online: true,
@@ -49,7 +50,7 @@ export function usePresence(date, user) {
       // Mark offline on cleanup
       update(myPresenceRef, { online: false });
     };
-  }, [user, date]);
+  }, [user, date, plantId]);
 
   // Update which section the user is currently editing
   const setActiveSection = useCallback(
@@ -67,9 +68,9 @@ export function usePresence(date, user) {
     update(myPresenceRef, { currentSection: null });
   }, [user]);
 
-  // Users online on the current date (excluding self)
+  // Users online on the current date & plant (excluding self)
   const onlineUsers = Object.values(presenceMap).filter(
-    (p) => p.online && p.currentDate === date && p.uid !== user?.uid
+    (p) => p.online && p.currentDate === date && p.currentPlant === plantId && p.uid !== user?.uid
   );
 
   return { presenceMap, onlineUsers, setActiveSection, clearActiveSection };

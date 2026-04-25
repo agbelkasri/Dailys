@@ -16,19 +16,19 @@
 .select {
   width: 60px;
   padding: 8px 4px;
-  border: 2px solid #ccc;
+  border: 2px solid var(--border-strong);
   border-radius: 4px;
   font-size: 15px;
   font-weight: 600;
   text-align: center;
   cursor: pointer;
-  background: white;
+  background: var(--bg-surface);
   min-height: 44px;
 }
 
 .select:focus {
   outline: none;
-  box-shadow: 0 0 0 2px rgba(45, 106, 159, 0.3);
+  box-shadow: 0 0 0 2px rgba(var(--plant-accent-rgb), 0.3);
 }
 
 .readOnlyBadge {

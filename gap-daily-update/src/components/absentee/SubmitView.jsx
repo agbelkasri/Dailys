@@ -56,7 +56,6 @@ export function SubmitView({ onSuccess, prefill = null }) {
       setForm(EMPTY_FORM);
       onSuccess?.();
     } catch (err) {
-      console.error(err);
       setError('Failed to submit: ' + err.message);
     } finally {
       setSubmitting(false);

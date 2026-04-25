@@ -47,7 +47,7 @@ export function AbsenteeReport({ user }) {
 
       <div className={styles.content}>
         {subTab === 'submit'  && (
-          <SubmitView user={user} onSuccess={() => setSubTab('daily')} />
+          <SubmitView onSuccess={() => setSubTab('daily')} />
         )}
         {subTab === 'daily'   && (
           <DailyView plantFilter={plantFilter} />

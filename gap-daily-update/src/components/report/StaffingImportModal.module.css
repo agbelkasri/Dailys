@@ -1,0 +1,263 @@
+.overlay {
+  position: fixed;
+  inset: 0;
+  background: rgba(0, 0, 0, 0.55);
+  display: flex;
+  align-items: flex-start;
+  justify-content: center;
+  z-index: 1200;
+  padding: 24px 12px 40px;
+  overflow-y: auto;
+}
+
+.modal {
+  background: var(--bg-surface);
+  border-radius: 10px;
+  box-shadow: 0 10px 40px var(--shadow-md);
+  width: 100%;
+  max-width: 960px;
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+}
+
+/* ── Header ──────────────────────────────────────────────────────────────── */
+.header {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 16px;
+  padding: 20px 24px 16px;
+  border-bottom: 1px solid var(--border-default);
+}
+
+.title {
+  margin: 0;
+  font-size: 17px;
+  font-weight: 700;
+  color: var(--text-heading);
+  line-height: 1.3;
+}
+
+.subtitle {
+  margin: 4px 0 0;
+  font-size: 13px;
+  color: var(--text-muted);
+}
+
+.closeBtn {
+  background: none;
+  border: none;
+  font-size: 18px;
+  line-height: 1;
+  color: var(--text-muted);
+  cursor: pointer;
+  padding: 2px 6px;
+  border-radius: 4px;
+  flex-shrink: 0;
+  transition: color 0.15s, background 0.15s;
+}
+.closeBtn:hover {
+  color: var(--text-primary);
+  background: var(--bg-muted);
+}
+
+/* ── Table ───────────────────────────────────────────────────────────────── */
+.tableWrap {
+  overflow-x: auto;
+  -webkit-overflow-scrolling: touch;
+  border-bottom: 1px solid var(--border-default);
+}
+
+.table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 13px;
+}
+
+.table thead tr {
+  background: var(--bg-muted);
+}
+
+.table th {
+  padding: 8px 10px;
+  font-size: 11px;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.4px;
+  color: var(--text-muted);
+  text-align: left;
+  border-bottom: 1px solid var(--border-strong);
+  white-space: nowrap;
+}
+
+.table td {
+  padding: 6px 8px;
+  vertical-align: middle;
+  border-bottom: 1px solid var(--border-light);
+}
+
+.rowMissingReason td {
+  background: rgba(234, 179, 8, 0.06);
+}
+
+/* Column widths */
+.colName   { min-width: 160px; }
+.colType   { width: 110px; }
+.colLabor  { width: 100px; }
+.colShift  { width: 100px; }
+.colDur    { width: 170px; }
+.colReason { min-width: 160px; }
+.colRemove { width: 40px; text-align: center; }
+
+/* ── Form controls inside the table ─────────────────────────────────────── */
+.input,
+.select {
+  width: 100%;
+  padding: 4px 7px;
+  font-size: 13px;
+  font-family: inherit;
+  background: var(--bg-surface);
+  color: var(--text-primary);
+  border: 1px solid var(--border-strong);
+  border-radius: 4px;
+  line-height: 1.4;
+  box-sizing: border-box;
+  transition: border-color 0.15s;
+}
+
+.input:focus,
+.select:focus {
+  outline: none;
+  border-color: var(--plant-accent);
+  box-shadow: 0 0 0 2px rgba(var(--plant-accent-rgb), 0.15);
+}
+
+/* Highlight selects that still have no value chosen */
+.selectEmpty {
+  color: var(--text-faint);
+  border-color: #f59e0b;
+}
+
+.removeBtn {
+  background: none;
+  border: none;
+  font-size: 13px;
+  color: var(--text-faint);
+  cursor: pointer;
+  padding: 3px 6px;
+  border-radius: 4px;
+  transition: color 0.15s, background 0.15s;
+}
+.removeBtn:hover {
+  color: #ef4444;
+  background: rgba(239, 68, 68, 0.08);
+}
+
+/* ── Empty state ─────────────────────────────────────────────────────────── */
+.empty {
+  padding: 32px 24px 24px;
+  color: var(--text-secondary);
+  font-size: 14px;
+  line-height: 1.6;
+}
+.emptyHint {
+  margin-top: 8px;
+  font-size: 13px;
+  color: var(--text-muted);
+}
+.emptyHint code {
+  background: var(--bg-muted);
+  border-radius: 3px;
+  padding: 1px 4px;
+  font-size: 12px;
+}
+
+/* ── Footer ──────────────────────────────────────────────────────────────── */
+.footer {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  padding: 14px 24px;
+  flex-wrap: wrap;
+}
+
+.footerNote {
+  font-size: 13px;
+  min-height: 20px;
+}
+
+.reasonWarning {
+  color: #b45309;
+  font-size: 13px;
+}
+
+.footerBtns {
+  display: flex;
+  gap: 10px;
+  align-items: center;
+}
+
+.cancelBtn {
+  padding: 8px 18px;
+  font-size: 14px;
+  font-family: inherit;
+  background: var(--bg-muted);
+  color: var(--text-secondary);
+  border: 1px solid var(--border-strong);
+  border-radius: 6px;
+  cursor: pointer;
+  transition: background 0.15s;
+}
+.cancelBtn:hover:not(:disabled) {
+  background: var(--bg-subtle);
+}
+.cancelBtn:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
+}
+
+.importBtn {
+  padding: 8px 20px;
+  font-size: 14px;
+  font-weight: 600;
+  font-family: inherit;
+  background: var(--plant-primary);
+  color: white;
+  border: none;
+  border-radius: 6px;
+  cursor: pointer;
+  transition: opacity 0.15s;
+}
+.importBtn:hover:not(:disabled) {
+  opacity: 0.88;
+}
+.importBtn:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
+}
+
+/* ── Error ───────────────────────────────────────────────────────────────── */
+.error {
+  margin: 0 24px;
+  padding: 10px 14px;
+  background: rgba(239, 68, 68, 0.08);
+  border: 1px solid rgba(239, 68, 68, 0.3);
+  border-radius: 6px;
+  color: #dc2626;
+  font-size: 13px;
+}
+
+/* ── Dark mode overrides ─────────────────────────────────────────────────── */
+:global([data-theme="dark"]) .reasonWarning {
+  color: #fbbf24;
+}
+
+:global([data-theme="dark"]) .error {
+  color: #fca5a5;
+}
+
+:global([data-theme="dark"]) .rowMissingReason td {
+  background: rgba(234, 179, 8, 0.08);
+}

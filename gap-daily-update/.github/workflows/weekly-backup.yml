@@ -1,0 +1,50 @@
+name: Weekly Excel Backup
+
+on:
+  schedule:
+    # Every Monday at 12:00 UTC  (8 am EDT / 7 am EST)
+    # Covers the previous Mon–Sun so Sunday's report is always included.
+    - cron: '0 12 * * 1'
+
+  # Also lets you kick it off manually from the Actions tab at any time.
+  workflow_dispatch:
+
+jobs:
+  backup:
+    runs-on: ubuntu-latest
+
+    permissions:
+      contents: write   # required to commit and push the Excel files
+
+    steps:
+      - name: Check out repository
+        uses: actions/checkout@v4
+        with:
+          token: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Set up Node.js 20
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+          cache: 'npm'
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Generate Excel backups
+        env:
+          FIREBASE_SERVICE_ACCOUNT: ${{ secrets.FIREBASE_SERVICE_ACCOUNT }}
+        run: node scripts/weeklyBackup.js
+
+      - name: Commit and push backup files
+        run: |
+          git config user.name  "GitHub Actions"
+          git config user.email "actions@github.com"
+          git add backups/
+          if git diff --staged --quiet; then
+            echo "No new files to commit — nothing changed."
+          else
+            WEEK=$(date -u +'%Y-W%V')
+            git commit -m "chore: weekly backup ${WEEK}"
+            git push
+          fi

@@ -4,7 +4,7 @@
 }
 
 .row:hover {
-  background: #fafbfc;
+  background: var(--bg-subtle);
 }
 
 .responsible {
@@ -13,10 +13,10 @@
   padding: 10px 12px;
   font-weight: 600;
   font-size: 12px;
-  color: #555;
+  color: var(--text-secondary);
   vertical-align: top;
-  border-bottom: 1px solid #eee;
-  border-right: 1px solid #eee;
+  border-bottom: 1px solid var(--border-light);
+  border-right: 1px solid var(--border-light);
 }
 
 .measurable {
@@ -25,10 +25,18 @@
   padding: 10px 12px;
   font-weight: 500;
   font-size: 13px;
-  color: #222;
+  color: var(--text-heading);
   vertical-align: top;
-  border-bottom: 1px solid #eee;
-  border-right: 1px solid #eee;
+  border-bottom: 1px solid var(--border-light);
+  border-right: 1px solid var(--border-light);
+}
+
+.thresholdHint {
+  margin-top: 5px;
+  font-size: 10px;
+  font-weight: 400;
+  color: var(--text-muted);
+  line-height: 1.5;
 }
 
 .status {
@@ -37,28 +45,48 @@
   padding: 10px 8px;
   text-align: center;
   vertical-align: top;
-  border-bottom: 1px solid #eee;
-  border-right: 1px solid #eee;
+  border-bottom: 1px solid var(--border-light);
+  border-right: 1px solid var(--border-light);
 }
 
 .content {
   padding: 8px 12px;
   vertical-align: top;
-  border-bottom: 1px solid #eee;
+  border-bottom: 1px solid var(--border-light);
+  overflow: hidden;
+  min-width: 0;
 }
 
-.lastEdit {
+.lastEditBtn {
+  display: block;
+  width: 100%;
   margin-top: 4px;
+  padding: 0;
+  background: none;
+  border: none;
   font-size: 10px;
-  color: #aaa;
+  color: var(--text-faint);
   text-align: right;
+  cursor: pointer;
+  transition: color 0.15s;
+  font-family: inherit;
+}
+
+.lastEditBtn:hover {
+  color: var(--plant-primary);
+}
+
+.historyLink {
+  text-decoration: underline;
+  text-decoration-style: dotted;
+  text-underline-offset: 2px;
 }
 
 .card {
-  background: white;
+  background: var(--bg-surface);
   border-radius: 8px;
-  border: 1px solid #e0e4e8;
-  box-shadow: 0 1px 3px rgba(0,0,0,0.06);
+  border: 1px solid var(--border-default);
+  box-shadow: 0 1px 3px var(--shadow-sm);
   overflow: hidden;
   border-left: 4px solid #e0e0e0;
   transition: border-left-color 0.3s;
@@ -69,8 +97,8 @@
   align-items: center;
   justify-content: space-between;
   padding: 10px 14px;
-  background: #f8f9fb;
-  border-bottom: 1px solid #eee;
+  background: var(--bg-subtle);
+  border-bottom: 1px solid var(--border-light);
   gap: 10px;
 }
 
@@ -82,13 +110,13 @@
 .cardMeasurable {
   font-size: 15px;
   font-weight: 600;
-  color: #1a1a1a;
+  color: var(--text-heading);
   line-height: 1.2;
 }
 
 .cardResponsible {
   font-size: 12px;
-  color: #888;
+  color: var(--text-muted);
   margin-top: 2px;
 }
 
@@ -96,9 +124,93 @@
   padding: 12px 14px;
 }
 
-.cardLastEdit {
-  margin-top: 8px;
-  font-size: 11px;
-  color: #bbb;
-  text-align: right;
+/* cardLastEdit is replaced by the shared LastEditButton (.lastEditBtn) above */
+
+/* ── Permanent pin toggle (admin only) ───────────────────────────────────── */
+.permanentToggle {
+  appearance: none;
+  -webkit-appearance: none;
+  width: 13px;
+  height: 13px;
+  border: 2px solid var(--border-strong);
+  border-radius: 50%;
+  cursor: pointer;
+  vertical-align: middle;
+  flex-shrink: 0;
+  transition: border-color 0.15s, background 0.15s;
+  margin-right: 5px;
+  position: relative;
+  top: -1px;
+}
+
+.permanentToggle:hover {
+  border-color: var(--plant-primary);
+}
+
+.permanentToggle:checked {
+  background: var(--plant-primary);
+  border-color: var(--plant-primary);
+}
+
+.permanentToggle:checked::after {
+  content: '';
+  display: block;
+  width: 5px;
+  height: 5px;
+  background: white;
+  border-radius: 50%;
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+}
+
+/* wraps the permanent radio + status badge in the card header */
+.cardHeaderActions {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  flex-shrink: 0;
+}
+
+/* ── Staffing Issues → Import to Absentee ────────────────────────────────── */
+.importRow {
+  display: flex;
+  align-items: center;
+  justify-content: flex-end;
+  gap: 10px;
+  margin-top: 6px;
+}
+
+.importAbsenteeBtn {
+  padding: 3px 10px;
+  font-size: 12px;
+  font-family: inherit;
+  font-weight: 500;
+  background: var(--bg-muted);
+  color: var(--plant-primary);
+  border: 1px solid var(--plant-accent);
+  border-radius: 4px;
+  cursor: pointer;
+  transition: background 0.15s, color 0.15s;
+  white-space: nowrap;
+}
+
+.importAbsenteeBtn:hover:not(:disabled) {
+  background: var(--plant-accent-bg);
+}
+
+.importAbsenteeBtn:disabled {
+  opacity: 0.45;
+  cursor: not-allowed;
+}
+
+.importSuccess {
+  font-size: 12px;
+  color: #16a34a;
+  font-weight: 500;
+}
+
+:global([data-theme="dark"]) .importSuccess {
+  color: #4ade80;
 }

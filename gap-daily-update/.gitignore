@@ -18,6 +18,9 @@ dist-ssr
 # Firebase
 .firebase/
 
+# Explicitly track weekly Excel backups (do NOT add backups/ here)
+!backups/
+
 # Editor directories and files
 .vscode/*
 !.vscode/extensions.json

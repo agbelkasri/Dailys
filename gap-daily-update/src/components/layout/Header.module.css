@@ -1,3 +1,6 @@
+/* ══════════════════════════════════════════════════
+   SHARED BASE — sticky header shell
+══════════════════════════════════════════════════ */
 .header {
   position: sticky;
   top: 0;
@@ -8,12 +11,16 @@
   gap: 12px;
   padding: 0 20px;
   height: 56px;
-  background: #1a3a5c;
+  background: var(--plant-primary);
   color: white;
   box-shadow: 0 2px 8px rgba(0, 0, 0, 0.2);
+  transition: background 0.3s ease;
 }
 
-.left {
+/* ══════════════════════════════════════════════════
+   DESKTOP LEFT — logo + title + tab nav
+══════════════════════════════════════════════════ */
+.desktopLeft {
   display: flex;
   align-items: center;
   gap: 12px;
@@ -25,7 +32,7 @@
   height: 36px;
   border-radius: 8px;
   background: white;
-  color: #1a3a5c;
+  color: var(--plant-primary);
   display: flex;
   align-items: center;
   justify-content: center;
@@ -84,7 +91,7 @@
   height: 32px;
   background: rgba(255, 255, 255, 0.95);
   border: 1px solid rgba(255, 255, 255, 0.95);
-  color: #1a3a5c;
+  color: var(--plant-primary);
   border-radius: 4px;
   font-size: 12px;
   font-weight: 700;
@@ -92,6 +99,9 @@
   white-space: nowrap;
 }
 
+/* ══════════════════════════════════════════════════
+   DATE NAVIGATION (shared desktop + mobile)
+══════════════════════════════════════════════════ */
 .center {
   display: flex;
   align-items: center;
@@ -147,7 +157,10 @@
   margin-top: 2px;
 }
 
-.right {
+/* ══════════════════════════════════════════════════
+   DESKTOP RIGHT — online users + export + user
+══════════════════════════════════════════════════ */
+.desktopRight {
   display: flex;
   align-items: center;
   gap: 12px;
@@ -157,6 +170,48 @@
 .exportMenu {
   display: flex;
   gap: 6px;
+  align-items: center;
+}
+
+.darkModeBtn {
+  width: 34px;
+  height: 34px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: rgba(255, 255, 255, 0.1);
+  border: 1px solid rgba(255, 255, 255, 0.2);
+  border-radius: 8px;
+  cursor: pointer;
+  transition: background 0.2s, border-color 0.2s, box-shadow 0.2s;
+  flex-shrink: 0;
+  color: white;
+  backdrop-filter: blur(6px);
+  -webkit-backdrop-filter: blur(6px);
+}
+
+.darkModeBtn:hover {
+  background: rgba(255, 255, 255, 0.2);
+  border-color: rgba(255, 255, 255, 0.4);
+  box-shadow: 0 0 0 2px rgba(255, 255, 255, 0.1);
+}
+
+.darkModeIcon {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  animation: iconSpinIn 0.35s cubic-bezier(0.34, 1.56, 0.64, 1);
+}
+
+@keyframes iconSpinIn {
+  from {
+    transform: rotate(-90deg) scale(0.4);
+    opacity: 0;
+  }
+  to {
+    transform: rotate(0deg) scale(1);
+    opacity: 1;
+  }
 }
 
 .exportBtn {
@@ -196,6 +251,7 @@
   font-size: 12px;
   font-weight: 700;
   cursor: default;
+  flex-shrink: 0;
 }
 
 .logoutBtn {
@@ -215,43 +271,210 @@
   border-color: rgba(255, 255, 255, 0.5);
 }
 
+/* ══════════════════════════════════════════════════
+   MOBILE ONLY — hidden on desktop
+══════════════════════════════════════════════════ */
+.mobileTopRow {
+  display: none;
+}
+
+.hamburger {
+  display: none;
+}
+
+.mobileBrand {
+  display: none;
+}
+
+.mobileRightSlot {
+  display: none;
+}
+
+/* ══════════════════════════════════════════════════
+   HAMBURGER DROPDOWN (rendered mobile only but
+   positioned via JS so defined outside media query)
+══════════════════════════════════════════════════ */
+.menuWrap {
+  position: relative;
+}
+
+.dropdown {
+  position: absolute;
+  top: calc(100% + 10px);
+  left: 0;
+  z-index: 200;
+  background: white;
+  border-radius: 12px;
+  box-shadow: 0 8px 30px rgba(0, 0, 0, 0.18), 0 2px 8px rgba(0, 0, 0, 0.1);
+  min-width: 210px;
+  overflow: hidden;
+  padding: 6px 0;
+  /* Prevent the dropdown from triggering scroll when it overflows the header */
+  will-change: transform;
+}
+
+.dropdownItem {
+  display: flex;
+  align-items: center;
+  width: 100%;
+  min-height: 48px;
+  padding: 0 18px;
+  background: none;
+  border: none;
+  color: #1e293b;
+  font-size: 15px;
+  font-weight: 500;
+  text-align: left;
+  cursor: pointer;
+  gap: 8px;
+  transition: background 0.12s;
+}
+
+.dropdownItem:hover {
+  background: #f1f5f9;
+}
+
+.dropdownItemActive {
+  display: flex;
+  align-items: center;
+  width: 100%;
+  min-height: 48px;
+  padding: 0 18px;
+  background: var(--plant-dropdown-bg);
+  border: none;
+  color: var(--plant-primary);
+  font-size: 15px;
+  font-weight: 700;
+  text-align: left;
+  cursor: pointer;
+  gap: 8px;
+}
+
+.dropdownCheck {
+  font-size: 13px;
+  color: var(--plant-primary);
+  width: 16px;
+  flex-shrink: 0;
+}
+
+.dropdownDivider {
+  height: 1px;
+  background: #e2e8f0;
+  margin: 4px 0;
+}
+
+.dropdownSignOut {
+  color: #dc2626;
+}
+
+.dropdownSignOut:hover {
+  background: #fef2f2;
+}
+
+/* ══════════════════════════════════════════════════
+   MOBILE BREAKPOINT (≤640px)
+══════════════════════════════════════════════════ */
 @media (max-width: 640px) {
   .header {
+    flex-direction: column;
+    align-items: stretch;
+    justify-content: flex-start;
     height: auto;
-    flex-wrap: wrap;
     padding: 8px 12px;
+    gap: 0;
   }
 
-  .left {
-    flex: 1;
-  }
-
-  .titleBlock .subtitle {
+  /* Hide desktop-only sections */
+  .desktopLeft {
     display: none;
   }
 
-  .tabNav {
-    margin-left: 4px;
+  .desktopRight {
+    display: none;
   }
 
-  .tab, .tabActive {
-    padding: 4px 8px;
-    font-size: 11px;
+  /* ── Mobile top row: 3-column grid for true centering ── */
+  .mobileTopRow {
+    display: grid;
+    grid-template-columns: 44px 1fr 44px;
+    align-items: center;
+    width: 100%;
+    min-height: 44px;
   }
 
+  /* Hamburger button */
+  .hamburger {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    width: 40px;
+    height: 40px;
+    background: rgba(255, 255, 255, 0.1);
+    border: 1px solid rgba(255, 255, 255, 0.2);
+    color: white;
+    border-radius: 8px;
+    font-size: 18px;
+    cursor: pointer;
+    transition: background 0.15s;
+    /* Visually center within 44px grid column */
+    justify-self: start;
+  }
+
+  .hamburger:hover {
+    background: rgba(255, 255, 255, 0.2);
+  }
+
+  /* Centered brand */
+  .mobileBrand {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 8px;
+  }
+
+  .mobileTitleText {
+    font-size: 15px;
+    font-weight: 700;
+    color: white;
+    white-space: nowrap;
+  }
+
+  /* Right slot: avatar */
+  .mobileRightSlot {
+    display: flex;
+    align-items: center;
+    justify-content: flex-end;
+    gap: 6px;
+  }
+
+  /* Date nav — full width row below top row */
   .center {
-    order: 3;
     width: 100%;
     justify-content: center;
-    border-top: 1px solid rgba(255, 255, 255, 0.1);
-    padding: 4px 0;
+    border-top: 1px solid rgba(255, 255, 255, 0.12);
+    padding: 6px 0;
+    margin-top: 6px;
   }
 
-  .exportMenu {
-    display: none;
+  /* Shrink date text slightly on very small screens */
+  .dateDisplay {
+    min-width: 0;
   }
 
-  .right {
-    gap: 6px;
+  .dateText {
+    font-size: 13px;
+    white-space: nowrap;
+  }
+}
+
+/* Extra-small screens (≤380px) — tighten date display */
+@media (max-width: 380px) {
+  .dateText {
+    font-size: 12px;
+  }
+
+  .navBtn {
+    width: 38px;
+    min-width: 38px;
   }
 }

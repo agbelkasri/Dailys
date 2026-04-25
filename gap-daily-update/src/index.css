@@ -2,12 +2,91 @@
   box-sizing: border-box;
 }
 
+/* ── Plant colour themes ────────────────────────────────────────────────────
+   Applied via data-plant="GAP|EAP|SLP" on <body>.
+   GAP  = Marine Blue  (was SLP)
+   EAP  = Baby / Sky Blue
+   SLP  = Deep Navy    (was GAP)
+──────────────────────────────────────────────────────────────────────────── */
+:root {
+  /* GAP — Marine Blue */
+  --plant-primary:     #1a4a8c;
+  --plant-primary-rgb: 26, 74, 140;
+  --plant-accent:      #2e75c8;
+  --plant-accent-rgb:  46, 117, 200;
+  --plant-accent-bg:   #eef4ff;
+  --plant-dropdown-bg: #dce8fb;
+}
+
+[data-plant="EAP"] {
+  /* EAP — Baby / Sky Blue */
+  --plant-primary:     #0284c7;
+  --plant-primary-rgb: 2, 132, 199;
+  --plant-accent:      #38bdf8;
+  --plant-accent-rgb:  56, 189, 248;
+  --plant-accent-bg:   #f0f9ff;
+  --plant-dropdown-bg: #e0f2fe;
+}
+
+[data-plant="SLP"] {
+  /* SLP — Deep Navy */
+  --plant-primary:     #1a3a5c;
+  --plant-primary-rgb: 26, 58, 92;
+  --plant-accent:      #2d6a9f;
+  --plant-accent-rgb:  45, 106, 159;
+  --plant-accent-bg:   #f0f7ff;
+  --plant-dropdown-bg: #e8f0fe;
+}
+
+/* ── Semantic surface & text tokens ─────────────────────────────────────────
+   Light defaults; overridden in [data-theme="dark"] below.
+──────────────────────────────────────────────────────────────────────────── */
+:root {
+  --bg-page:        #f4f6f9;
+  --bg-surface:     #ffffff;
+  --bg-subtle:      #f8fafc;
+  --bg-muted:       #f0f4f8;
+  --text-primary:   #1a1a1a;
+  --text-secondary: #475569;
+  --text-muted:     #64748b;
+  --text-faint:     #94a3b8;
+  --text-heading:   #1e293b;
+  --border-default: #e8ecf0;
+  --border-strong:  #dde2e8;
+  --border-light:   #f1f5f9;
+  --shadow-sm:      rgba(0, 0, 0, 0.06);
+  --shadow-md:      rgba(0, 0, 0, 0.12);
+}
+
+[data-theme="dark"] {
+  --bg-page:        #0f172a;
+  --bg-surface:     #1e293b;
+  --bg-subtle:      #243350;
+  --bg-muted:       #1a2744;
+  --text-primary:   #e2e8f0;
+  --text-secondary: #94a3b8;
+  --text-muted:     #94a3b8;
+  --text-faint:     #4a5c7a;
+  --text-heading:   #f1f5f9;
+  --border-default: #2d3f5e;
+  --border-strong:  #374f70;
+  --border-light:   #243350;
+  --shadow-sm:      rgba(0, 0, 0, 0.3);
+  --shadow-md:      rgba(0, 0, 0, 0.5);
+}
+
+/* ── Dark-mode plant accent backgrounds (keep readable in dark surfaces) ── */
+[data-theme="dark"] {
+  --plant-accent-bg:   rgba(var(--plant-accent-rgb), 0.15);
+  --plant-dropdown-bg: rgba(var(--plant-primary-rgb), 0.25);
+}
+
 :root {
   font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif;
   line-height: 1.5;
   font-weight: 400;
-  color: #1a1a1a;
-  background-color: #f4f6f9;
+  color: var(--text-primary);
+  background-color: var(--bg-page);
   font-synthesis: none;
   text-rendering: optimizeLegibility;
   -webkit-font-smoothing: antialiased;
@@ -17,6 +96,9 @@ body {
   margin: 0;
   min-height: 100vh;
   overflow-x: hidden;
+  background-color: var(--bg-page);
+  color: var(--text-primary);
+  transition: background-color 0.2s ease, color 0.2s ease;
 }
 
 #root {
@@ -33,6 +115,31 @@ main {
 button {
   font-family: inherit;
   cursor: pointer;
+}
+
+/* ── Global dark-mode element overrides ─────────────────────────────────────
+   Catches any remaining hardcoded whites in components not yet using tokens.
+──────────────────────────────────────────────────────────────────────────── */
+[data-theme="dark"] input:not([type="checkbox"]):not([type="radio"]),
+[data-theme="dark"] textarea,
+[data-theme="dark"] select {
+  background-color: var(--bg-surface);
+  color: var(--text-primary);
+  border-color: var(--border-strong);
+  color-scheme: dark;
+}
+
+[data-theme="dark"] [contenteditable] {
+  background-color: var(--bg-surface);
+  color: var(--text-primary);
+}
+
+/* Intentional inline colours (red text, yellow highlight) are preserved by
+   the JS stripping logic in RichCommentField — no blanket !important needed. */
+
+[data-theme="dark"] input::placeholder,
+[data-theme="dark"] textarea::placeholder {
+  color: var(--text-faint);
 }
 
 /* Prevent iOS zoom on input focus */

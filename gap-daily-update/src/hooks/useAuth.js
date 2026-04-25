@@ -35,15 +35,26 @@ export function useAuth() {
       // 'cancelled-popup-request' fires when the user opens multiple popups — ignore silently
       if (err.code === 'auth/cancelled-popup-request') return;
 
+      // Log full error to console for debugging
+      console.error('[Auth] Sign-in error:', err.code, err.message);
+
       const messages = {
-        'auth/popup-closed-by-user': 'Sign-in was cancelled.',
+        'auth/popup-closed-by-user':
+          'Sign-in was cancelled. If the Microsoft window showed an error, check the setup steps below.',
         'auth/popup-blocked':
           'Pop-up was blocked by your browser. Please allow pop-ups for this site and try again.',
         'auth/account-exists-with-different-credential':
           'An account already exists with this email address.',
-        'auth/user-disabled': 'This account has been disabled.',
+        'auth/user-disabled':
+          'This account has been disabled.',
+        'auth/operation-not-allowed':
+          'Microsoft sign-in is not enabled yet. Enable it in the Firebase Console under Authentication → Sign-in method.',
+        'auth/invalid-api-key':
+          'Firebase configuration error. Check the app setup.',
+        'auth/unauthorized-domain':
+          'This domain is not authorized in Firebase. Add it under Authentication → Settings → Authorized domains.',
       };
-      setError(messages[err.code] || 'Sign in failed. Please try again.');
+      setError(messages[err.code] || `Sign in failed (${err.code}). Check the browser console for details.`);
     }
   };
 

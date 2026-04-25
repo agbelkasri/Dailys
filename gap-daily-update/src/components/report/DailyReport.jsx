@@ -1,8 +1,9 @@
-import { SECTIONS } from '../../constants/sections';
+import { getSectionsForPlant } from '../../constants/sections';
 import { ReportSection, ReportSectionCard } from './ReportSection';
 import styles from './DailyReport.module.css';
 
-export function DailyReport({ date, readOnly, sections, loading, error, presenceMap, onFocusSection, onBlurSection }) {
+export function DailyReport({ reportId, plantId, readOnly, sections, loading, error, presenceMap, onFocusSection, onBlurSection }) {
+  const sectionDefs = getSectionsForPlant(plantId);
 
   if (loading) {
     return (
@@ -25,7 +26,7 @@ export function DailyReport({ date, readOnly, sections, loading, error, presence
 
   const sharedProps = (sectionDef) => ({
     key: sectionDef.id,
-    date,
+    reportId,
     sectionDef,
     sectionData: sections[sectionDef.id],
     readOnly,
@@ -54,7 +55,7 @@ export function DailyReport({ date, readOnly, sections, loading, error, presence
             </tr>
           </thead>
           <tbody>
-            {SECTIONS.map((sectionDef) => (
+            {sectionDefs.map((sectionDef) => (
               <ReportSection {...sharedProps(sectionDef)} />
             ))}
           </tbody>
@@ -63,7 +64,7 @@ export function DailyReport({ date, readOnly, sections, loading, error, presence
 
       {/* Mobile: card layout */}
       <div className={styles.cardList}>
-        {SECTIONS.map((sectionDef) => (
+        {sectionDefs.map((sectionDef) => (
           <ReportSectionCard {...sharedProps(sectionDef)} />
         ))}
       </div>

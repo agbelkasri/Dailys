@@ -3,22 +3,49 @@ import {
   doc,
   collection,
   onSnapshot,
-  query,
-  orderBy,
   setDoc,
   writeBatch,
   serverTimestamp,
+  getDocs,
 } from 'firebase/firestore';
 import { db } from '../firebase';
-import { SECTIONS } from '../constants/sections';
+import { getSectionsForPlant } from '../constants/sections';
 import { getTodayDate } from './useDateNavigation';
 
-// Client-side fallback: create today's report if Cloud Function hasn't run yet
-async function ensureTodayReportExists(date) {
-  const reportRef = doc(db, 'reports', date);
+// Walk back up to 14 calendar days to find the most recent report that has data.
+// Returns { sections: {[sectionId]: data}, sourceDate } or null.
+async function findCarryForwardSource(plantId, beforeDate) {
+  const base = new Date(beforeDate + 'T12:00:00');
+  for (let i = 1; i <= 14; i++) {
+    const d = new Date(base);
+    d.setDate(base.getDate() - i);
+    const prevDate = d.toISOString().split('T')[0];
+    const prevReportId = `${plantId}_${prevDate}`;
+    try {
+      const snap = await getDocs(collection(db, 'reports', prevReportId, 'sections'));
+      if (snap.size === 0) continue;
+      const hasData = snap.docs.some(doc => {
+        const s = doc.data();
+        return s.status || s.comments || s.subTableData?.length > 0;
+      });
+      if (!hasData) continue;
+      const sections = {};
+      snap.docs.forEach(doc => { sections[doc.id] = doc.data(); });
+      return { sections, sourceDate: prevDate };
+    } catch {
+      // Report doesn't exist or can't be read — try further back
+    }
+  }
+  return null;
+}
+
+// Client-side fallback: create today's report if Cloud Function hasn't run yet.
+// Carries forward section data from the most recent previous report so supervisors
+// don't have to re-enter information that rarely changes.
+async function ensureTodayReportExists(reportId, date, plantId) {
+  const reportRef = doc(db, 'reports', reportId);
 
   try {
-    // Use setDoc with merge:true so if it already exists nothing is overwritten
     await setDoc(
       reportRef,
       {
@@ -30,20 +57,26 @@ async function ensureTodayReportExists(date) {
       { merge: true }
     );
 
+    const previous = await findCarryForwardSource(plantId, date);
+
     const batch = writeBatch(db);
-    for (const section of SECTIONS) {
-      const sectionRef = doc(db, 'reports', date, 'sections', section.id);
+    for (const section of getSectionsForPlant(plantId)) {
+      const sectionRef = doc(db, 'reports', reportId, 'sections', section.id);
+      const prev = previous?.sections[section.id];
+      // carryForward defaults to true; only skip data when explicitly false
+      const shouldCarry = prev?.carryForward !== false;
       batch.set(
         sectionRef,
         {
-          sectionId: section.id,
-          sectionType: section.sectionType,
-          responsible: section.responsible,
-          measurable: section.measurable,
-          sortOrder: section.sortOrder,
-          status: '',
-          comments: '',
-          subTableData: [],
+          sectionId:    section.id,
+          sectionType:  section.sectionType,
+          responsible:  section.responsible,
+          measurable:   section.measurable,
+          sortOrder:    section.sortOrder,
+          status:       shouldCarry ? (prev?.status       ?? '') : '',
+          comments:     shouldCarry ? (prev?.comments     ?? '') : '',
+          subTableData: shouldCarry ? (prev?.subTableData ?? []) : [],
+          carryForward: prev?.carryForward ?? true,  // always propagate the setting itself
           lastEditedBy: null,
           lastEditedAt: null,
         },
@@ -56,21 +89,25 @@ async function ensureTodayReportExists(date) {
   }
 }
 
-export function useReport(date) {
+export function useReport(date, plantId) {
   const [report, setReport] = useState(null);
   const [sections, setSections] = useState({});
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
 
   useEffect(() => {
-    if (!date) return;
+    if (!date || !plantId) return;
+
+    const reportId = `${plantId}_${date}`;
 
     setLoading(true);
     setError(null);
 
-    const reportRef = doc(db, 'reports', date);
-    const sectionsRef = collection(db, 'reports', date, 'sections');
-    const sectionsQuery = query(sectionsRef, orderBy('sortOrder'));
+    const reportRef = doc(db, 'reports', reportId);
+    const sectionsRef = collection(db, 'reports', reportId, 'sections');
+    // No orderBy — Firestore excludes docs missing the sorted field, which breaks
+    // newly-created section docs that only have partial data. Client-side ordering
+    // comes from getSectionsForPlant() in DailyReport, so server ordering is unused.
 
     const unsubReport = onSnapshot(
       reportRef,
@@ -78,9 +115,9 @@ export function useReport(date) {
         const data = snap.exists() ? snap.data() : null;
         setReport(data);
 
-        // If this is today and no report exists yet, create it
+        // If this is today and no report exists yet, create it (with carry-forward)
         if (!snap.exists() && date === getTodayDate()) {
-          ensureTodayReportExists(date);
+          ensureTodayReportExists(reportId, date, plantId);
         }
       },
       (err) => {
@@ -91,7 +128,7 @@ export function useReport(date) {
     );
 
     const unsubSections = onSnapshot(
-      sectionsQuery,
+      sectionsRef,
       (snap) => {
         const sectionsMap = {};
         snap.docs.forEach((d) => {
@@ -111,7 +148,7 @@ export function useReport(date) {
       unsubReport();
       unsubSections();
     };
-  }, [date]);
+  }, [date, plantId]);
 
   return { report, sections, loading, error };
 }

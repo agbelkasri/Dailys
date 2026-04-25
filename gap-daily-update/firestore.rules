@@ -22,14 +22,28 @@ service cloud.firestore {
             !exists(/databases/$(database)/documents/reports/$(date))
             || get(/databases/$(database)/documents/reports/$(date)).data.lockedAt == null
           );
-      }
 
-      // Audit log — authenticated users can create (append), never update or delete
-      match /auditLog/{logId} {
-        allow read: if request.auth != null;
-        allow create: if request.auth != null;
-        allow update, delete: if false;
+        // Per-section audit log — authenticated users can create (append), never update or delete
+        match /auditLog/{logId} {
+          allow read: if request.auth != null;
+          allow create: if request.auth != null;
+          allow update, delete: if false;
+        }
       }
+    }
+
+    // Turnover records — authenticated users can read, create, update, delete
+    match /turnovers/{turnoverID} {
+      allow read: if request.auth != null;
+      allow create: if request.auth != null
+        && request.resource.data.keys().hasAll([
+             'employeeName', 'plantId', 'lastDay', 'type',
+             'laborType', 'shift'
+           ])
+        && request.resource.data.plantId in ['EAP', 'GAP', 'SLP']
+        && request.resource.data.type in ['voluntary', 'involuntary'];
+      allow update: if request.auth != null;
+      allow delete: if request.auth != null;
     }
 
     // Absentee records — authenticated users can read, create, update, delete

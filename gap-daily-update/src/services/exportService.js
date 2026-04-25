@@ -1,5 +1,5 @@
 import * as XLSX from 'xlsx';
-import { SECTIONS, SECTION_TYPES } from '../constants/sections';
+import { getSectionsForPlant, SECTION_TYPES } from '../constants/sections';
 
 function formatSubTableForExcel(sectionType, subTableData) {
   if (!subTableData?.length) return '';
@@ -19,15 +19,15 @@ function formatSubTableForExcel(sectionType, subTableData) {
   }
 }
 
-export function exportToExcel(sectionsData, date) {
+export function exportToExcel(sectionsData, date, plantId = 'GAP') {
   const wsData = [
-    ['GAP Daily Update', '', '', ''],
+    [`${plantId} Daily Update`, '', '', ''],
     [`Report Date: ${date}`, '', '', ''],
     [''],
     ['Responsible Party', 'Measurable', 'Status G/Y/R', 'Comments / Explanation'],
   ];
 
-  for (const sectionDef of SECTIONS) {
+  for (const sectionDef of getSectionsForPlant(plantId)) {
     const data = sectionsData[sectionDef.id] || {};
     const content =
       sectionDef.sectionType === SECTION_TYPES.NORMAL
@@ -49,7 +49,7 @@ export function exportToExcel(sectionsData, date) {
 
   const wb = XLSX.utils.book_new();
   XLSX.utils.book_append_sheet(wb, ws, `Daily Update ${date}`);
-  XLSX.writeFile(wb, `GAP-Daily-Update-${date}.xlsx`);
+  XLSX.writeFile(wb, `${plantId}-Daily-Update-${date}.xlsx`);
 }
 
 export function printReport() {
