@@ -2,8 +2,9 @@ import { getSectionsForPlant } from '../../constants/sections';
 import { ReportSection, ReportSectionCard } from './ReportSection';
 import styles from './DailyReport.module.css';
 
-export function DailyReport({ reportId, plantId, readOnly, sections, loading, error, presenceMap, onFocusSection, onBlurSection }) {
+export function DailyReport({ reportId, plantId, readOnly, editableSectionIds, sections, loading, error, presenceMap, onFocusSection, onBlurSection }) {
   const sectionDefs = getSectionsForPlant(plantId);
+  const editableSet = editableSectionIds || new Set();
 
   if (loading) {
     return (
@@ -24,22 +25,44 @@ export function DailyReport({ reportId, plantId, readOnly, sections, loading, er
     );
   }
 
+  // A section is editable if the page is editable, OR if this user is an
+  // explicit editor for that section's responsible-party on this date.
+  const isSectionReadOnly = (sectionDef) =>
+    readOnly && !editableSet.has(sectionDef.id);
+
   const sharedProps = (sectionDef) => ({
     key: sectionDef.id,
     reportId,
     sectionDef,
     sectionData: sections[sectionDef.id],
-    readOnly,
+    readOnly: isSectionReadOnly(sectionDef),
     presenceMap,
     onFocusSection,
     onBlurSection,
   });
 
+  // Build a friendly read-only banner. If the user has section-level edit
+  // access on a historical day, surface which responsible-parties they can
+  // still edit so they know why some rows are enabled and others aren't.
+  const editableResponsibles = readOnly
+    ? Array.from(new Set(
+        sectionDefs
+          .filter((s) => editableSet.has(s.id))
+          .map((s) => s.responsible)
+      ))
+    : [];
+  const hasPartialEdit = readOnly && editableResponsibles.length > 0;
+
   return (
     <div className={styles.wrapper}>
-      {readOnly && (
+      {readOnly && !hasPartialEdit && (
         <div className={styles.readOnlyBanner}>
           Viewing historical report — read only
+        </div>
+      )}
+      {hasPartialEdit && (
+        <div className={styles.readOnlyBanner}>
+          Viewing historical report — read only except for {editableResponsibles.join(' / ')} sections
         </div>
       )}
 
