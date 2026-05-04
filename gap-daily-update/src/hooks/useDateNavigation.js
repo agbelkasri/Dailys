@@ -34,7 +34,11 @@ export function useDateNavigation() {
   const today = getTodayDate();
   const [selectedDate, setSelectedDate] = useState(today);
 
-  const isReadOnly = selectedDate !== today;
+  // One-day grace period: today AND the previous weekday remain editable for
+  // non-admins, so e.g. on Tuesday morning Monday's report can still be
+  // finalized. Anything older (or in the future) is read-only.
+  const yesterday  = prevWeekday(today);
+  const isReadOnly = selectedDate !== today && selectedDate !== yesterday;
 
   const goToPrevious = () => setSelectedDate(prevWeekday(selectedDate));
 
