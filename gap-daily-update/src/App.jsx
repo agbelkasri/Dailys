@@ -4,7 +4,6 @@ import { useDateNavigation } from './hooks/useDateNavigation';
 import { usePresence } from './hooks/usePresence';
 import { useReport } from './hooks/useReport';
 import { useIsAdmin } from './hooks/useIsAdmin';
-import { useResponsibleEditors } from './hooks/useResponsibleEditors';
 import { useDarkMode } from './hooks/useDarkMode';
 import { LoginPage } from './components/auth/LoginPage';
 import { Header } from './components/layout/Header';
@@ -13,65 +12,21 @@ import { AbsenteeReport } from './components/absentee/AbsenteeReport';
 import { TurnoverReport } from './components/turnover/TurnoverReport';
 import { exportToExcel, printReport } from './services/exportService';
 import { auth } from './firebase';
-import { getSectionsForPlant } from './constants/sections';
-import { isInCurrentOrPreviousISOWeek } from './utils/weekHelpers';
-
-/**
- * Returns a Set of section IDs the current user is permitted to edit on
- * `selectedDate` despite the page-level readOnly state. Used to grant
- * designated section editors (see /config/sectionEditors) a rolling
- * current-week + previous-week edit window for sections owned by their
- * responsible-party.
- */
-function computeEditableSectionIds({
-  isReadOnly, isAdmin, user, plantId, selectedDate, today, editorsByResponsible,
-}) {
-  if (!isReadOnly) return new Set();        // page is editable already
-  if (isAdmin) return new Set();            // admins edit everything anyway
-  if (!user?.email) return new Set();
-  if (!isInCurrentOrPreviousISOWeek(selectedDate, today)) return new Set();
-
-  const email = user.email.toLowerCase();
-  const sections = getSectionsForPlant(plantId);
-  const allowed = new Set();
-  for (const section of sections) {
-    const editors = editorsByResponsible[section.responsible];
-    if (editors && editors.includes(email)) allowed.add(section.id);
-  }
-  return allowed;
-}
 
 // Plant Daily subscriptions live here so they only run when this tab is active
 function PlantDailyTab({ plantId, user, activeTab, onTabChange, onLogout, isDark, onToggleDark }) {
   const isAdmin = useIsAdmin(auth.currentUser);
-  const editorsByResponsible = useResponsibleEditors();
   const {
     selectedDate,
     isReadOnly: isPastDay,
     goToPrevious,
     goToNext,
     canGoNext,
-    today,
     displayDate,
   } = useDateNavigation();
 
   // Admins can edit any day; non-admins are read-only on previous days
   const isReadOnly = isPastDay && !isAdmin;
-
-  // Designated section editors (config/sectionEditors) get edit access to
-  // sections owned by their responsible-party for the current + previous ISO
-  // week, even when the page is otherwise read-only. Admins already edit any
-  // day so we skip this whole computation for them. Memoization is left to
-  // the React Compiler — the scan is trivially cheap (~18 sections).
-  const editableSectionIds = computeEditableSectionIds({
-    isReadOnly,
-    isAdmin,
-    user,
-    plantId,
-    selectedDate,
-    today,
-    editorsByResponsible,
-  });
 
   const reportId = `${plantId}_${selectedDate}`;
 
@@ -110,7 +65,6 @@ function PlantDailyTab({ plantId, user, activeTab, onTabChange, onLogout, isDark
           reportId={reportId}
           plantId={plantId}
           readOnly={isReadOnly}
-          editableSectionIds={editableSectionIds}
           sections={sections}
           loading={loading}
           error={error}
