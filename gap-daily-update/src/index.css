@@ -89,9 +89,9 @@
    rules; backgrounds/borders should keep using --plant-primary directly.
 ──────────────────────────────────────────────────────────────────────────── */
 :root                                       { --plant-primary-text: var(--plant-primary); }
-[data-theme="dark"]                         { --plant-primary-text: #60a5fa; } /* GAP default — blue-400 */
-[data-theme="dark"][data-plant="EAP"]       { --plant-primary-text: #38bdf8; } /* sky-400 */
-[data-theme="dark"][data-plant="SLP"]       { --plant-primary-text: #93c5fd; } /* blue-300 */
+[data-theme="dark"]                         { --plant-primary-text: #bfdbfe; } /* GAP default — blue-200 */
+[data-theme="dark"][data-plant="EAP"]       { --plant-primary-text: #bae6fd; } /* sky-200 */
+[data-theme="dark"][data-plant="SLP"]       { --plant-primary-text: #dbeafe; } /* blue-100 — SLP navy needs the most lift */
 
 :root {
   font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif;
