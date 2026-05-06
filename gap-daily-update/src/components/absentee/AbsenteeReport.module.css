@@ -38,7 +38,7 @@
 
 .tab:hover {
   background: var(--bg-muted);
-  color: var(--plant-primary);
+  color: var(--plant-primary-text);
 }
 
 .tabActive {

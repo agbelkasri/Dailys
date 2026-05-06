@@ -1,9 +1,22 @@
-import { useRef, useEffect } from 'react';
+import { useRef, useEffect, useState } from 'react';
 import styles from './Chart.module.css';
 
 /** byDay: Map<dateString, number> — count per day */
 export function CalendarHeatmap({ byDay, year, month }) {
   const canvasRef = useRef(null);
+
+  // Track dark-mode state via body[data-theme] (set by useDarkMode). Canvas
+  // doesn't inherit CSS variables, so we pick colors conditionally and
+  // re-render when the theme toggles.
+  const [isDark, setIsDark] = useState(
+    () => typeof document !== 'undefined' && document.body.dataset.theme === 'dark'
+  );
+  useEffect(() => {
+    const update = () => setIsDark(document.body.dataset.theme === 'dark');
+    const observer = new MutationObserver(update);
+    observer.observe(document.body, { attributes: true, attributeFilter: ['data-theme'] });
+    return () => observer.disconnect();
+  }, []);
 
   useEffect(() => {
     const canvas = canvasRef.current;
@@ -32,14 +45,20 @@ export function CalendarHeatmap({ byDay, year, month }) {
 
     const DOW_LABELS = ['Su','Mo','Tu','We','Th','Fr','Sa'];
     ctx.font = '10px system-ui, sans-serif';
-    ctx.fillStyle = '#94a3b8';
+    // DOW labels: slate-400 on light, slate-300 on dark for clear contrast.
+    ctx.fillStyle = isDark ? '#cbd5e1' : '#94a3b8';
     ctx.textAlign = 'center';
     DOW_LABELS.forEach((lbl, i) => {
       ctx.fillText(lbl, labelW + i * (cellSize + gap) + cellSize / 2, 14);
     });
 
+    // Empty (count=0) cells: light gray on light surfaces, slate on dark
+    // surfaces — without the dark variant the empty squares glow against
+    // the dark page background. Heat-step colors stay constant in both
+    // modes (yellow / orange / red retain their semantic meaning).
+    const emptyCellColor = isDark ? '#334155' : '#f3f4f6';
     function getColor(count) {
-      if (!count) return '#f3f4f6';
+      if (!count) return emptyCellColor;
       if (count <= 2) return '#fef08a';
       if (count <= 4) return '#fb923c';
       return '#dc2626';
@@ -61,7 +80,16 @@ export function CalendarHeatmap({ byDay, year, month }) {
       ctx.roundRect(x, y, cellSize, cellSize, 3);
       ctx.fill();
 
-      ctx.fillStyle = count > 3 ? '#fff' : '#374151';
+      // Day-number text. Cell backgrounds vary by count; pick a contrasting
+      // text color. The empty cell flips between light/dark with the theme,
+      // so we special-case count=0 to use light text on the dark-mode empty
+      // cell. Yellow/orange cells keep dark text in both themes (the cell
+      // itself is light enough), and red cells keep white.
+      if (!count) {
+        ctx.fillStyle = isDark ? '#cbd5e1' : '#374151';
+      } else {
+        ctx.fillStyle = count > 3 ? '#fff' : '#374151';
+      }
       ctx.font = '10px system-ui, sans-serif';
       ctx.textAlign = 'center';
       ctx.fillText(day, x + cellSize / 2, y + cellSize / 2 + 4);
@@ -72,7 +100,7 @@ export function CalendarHeatmap({ byDay, year, month }) {
         ctx.fillText(count, x + cellSize / 2, y + cellSize / 2 - 6);
       }
     }
-  }, [byDay, year, month]);
+  }, [byDay, year, month, isDark]);
 
   return (
     <div>
