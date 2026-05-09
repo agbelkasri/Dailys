@@ -1,6 +1,6 @@
 {
-  "name": "gap-daily-update-functions",
-  "description": "Cloud Functions for GAP Daily Update",
+  "name": "aap-daily-update-functions",
+  "description": "Cloud Functions for AAP Daily Update",
   "scripts": {
     "serve": "firebase emulators:start --only functions",
     "shell": "firebase functions:shell",

@@ -12,7 +12,7 @@
 ## Step 1: Create Firebase Project
 
 1. Go to [https://console.firebase.google.com](https://console.firebase.google.com)
-2. Click **Add project** → name it (e.g. `gap-daily-update`)
+2. Click **Add project** → name it (e.g. `aap-daily-update`)
 3. Enable the following services in the Firebase console:
    - **Firestore Database** → Start in Production mode
    - **Realtime Database** → Start in Locked mode → choose US region

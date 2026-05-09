@@ -27,22 +27,22 @@ jobs:
         with:
           node-version: '20'
           cache: 'npm'
-          cache-dependency-path: gap-daily-update/package-lock.json
+          cache-dependency-path: aap-daily-update/package-lock.json
 
       - name: Install dependencies
         run: npm ci
-        working-directory: gap-daily-update
+        working-directory: aap-daily-update
 
       - name: Generate Excel backups
         env:
           FIREBASE_SERVICE_ACCOUNT: ${{ secrets.FIREBASE_SERVICE_ACCOUNT }}
-        run: node gap-daily-update/scripts/weeklyBackup.js
+        run: node aap-daily-update/scripts/weeklyBackup.js
 
       - name: Commit and push backup files
         run: |
           git config user.name  "GitHub Actions"
           git config user.email "actions@github.com"
-          git add gap-daily-update/backups/
+          git add aap-daily-update/backups/
           if git diff --staged --quiet; then
             echo "No new files to commit — nothing changed."
           else
