@@ -1,0 +1,49 @@
+name: Deploy Firestore Rules & Indexes
+
+# Deploys aap-daily-update/firestore.rules and firestore.indexes.json
+# to the dailys-aap Firebase project whenever they change on main.
+# Hosting has its own workflow (deploy-hosting.yml); keeping these
+# concerns separate so a rules-only change can deploy without rebuilding
+# the front-end bundle, and vice versa.
+#
+# Reuses the FIREBASE_SERVICE_ACCOUNT repo secret (already configured for
+# the weekly backup job).
+
+on:
+  push:
+    branches: [main]
+    paths:
+      - 'aap-daily-update/firestore.rules'
+      - 'aap-daily-update/firestore.indexes.json'
+      - '.github/workflows/deploy-firestore-rules.yml'
+  workflow_dispatch:
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Check out repository
+        uses: actions/checkout@v4
+
+      - name: Set up Node.js 20
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+
+      - name: Write service-account credentials to temp file
+        # firebase-tools picks up service-account auth via
+        # GOOGLE_APPLICATION_CREDENTIALS pointing to a JSON keyfile.
+        run: |
+          printf '%s' "$FIREBASE_SERVICE_ACCOUNT" > "$RUNNER_TEMP/sa.json"
+          echo "GOOGLE_APPLICATION_CREDENTIALS=$RUNNER_TEMP/sa.json" >> "$GITHUB_ENV"
+        env:
+          FIREBASE_SERVICE_ACCOUNT: ${{ secrets.FIREBASE_SERVICE_ACCOUNT }}
+
+      - name: Deploy Firestore rules and indexes
+        run: |
+          npx -y firebase-tools@latest deploy \
+            --only firestore:rules,firestore:indexes \
+            --project dailys-aap \
+            --non-interactive
+        working-directory: aap-daily-update

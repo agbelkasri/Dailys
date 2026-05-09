@@ -2,7 +2,14 @@ import { getSectionsForPlant } from '../../constants/sections';
 import { ReportSection, ReportSectionCard } from './ReportSection';
 import styles from './DailyReport.module.css';
 
-export function DailyReport({ reportId, plantId, readOnly, sections, loading, error, presenceMap, onFocusSection, onBlurSection }) {
+export function DailyReport({
+  reportId, plantId, readOnly, sections, loading, error,
+  presenceMap, onFocusSection, onBlurSection,
+  // Change-request controls (all optional — fall through to a static
+  // read-only banner if the parent doesn't pass them, e.g. a print view)
+  canRequestEdit = false, editRequested = false, submitState = 'idle',
+  onRequestEdit, onSubmitChanges, onCancelEdit,
+}) {
   const sectionDefs = getSectionsForPlant(plantId);
 
   if (loading) {
@@ -35,11 +42,66 @@ export function DailyReport({ reportId, plantId, readOnly, sections, loading, er
     onBlurSection,
   });
 
+  // Banner rendering. Three meaningful states for a historical report:
+  //   1. canRequestEdit && readOnly      — locked, show "Request Edit Access"
+  //   2. canRequestEdit && !readOnly     — unlocked via request, show
+  //                                        "Submit Changes" + "Cancel"
+  //   3. readOnly && !canRequestEdit     — fallback static read-only banner
+  //                                        (e.g. parent didn't wire the
+  //                                        change-request callbacks)
+  // When the user already has full edit rights (today/yesterday/admin) no
+  // banner renders.
+  const submitting = submitState === 'submitting';
+  const submitFailed = submitState === 'error';
+
   return (
     <div className={styles.wrapper}>
-      {readOnly && (
+      {canRequestEdit && readOnly && (
         <div className={styles.readOnlyBanner}>
-          Viewing historical report — read only
+          <span>Viewing historical report — read only</span>
+          <button
+            type="button"
+            className={styles.requestEditBtn}
+            onClick={onRequestEdit}
+          >
+            Request Edit Access
+          </button>
+        </div>
+      )}
+      {canRequestEdit && editRequested && (
+        <div className={`${styles.readOnlyBanner} ${styles.editingBanner}`}>
+          <span>
+            Editing this historical report — your changes will be submitted as
+            an auto-approved change request.
+          </span>
+          <div className={styles.bannerActions}>
+            <button
+              type="button"
+              className={styles.requestEditBtn}
+              onClick={onSubmitChanges}
+              disabled={submitting}
+            >
+              {submitting ? 'Submitting…' : 'Submit Changes'}
+            </button>
+            <button
+              type="button"
+              className={styles.cancelEditBtn}
+              onClick={onCancelEdit}
+              disabled={submitting}
+            >
+              Cancel
+            </button>
+          </div>
+          {submitFailed && (
+            <span className={styles.bannerError}>
+              Couldn't log your change request — check your connection and try again.
+            </span>
+          )}
+        </div>
+      )}
+      {readOnly && !canRequestEdit && (
+        <div className={styles.readOnlyBanner}>
+          <span>Viewing historical report — read only</span>
         </div>
       )}
 

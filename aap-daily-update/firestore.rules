@@ -30,6 +30,19 @@ service cloud.firestore {
           allow update, delete: if false;
         }
       }
+
+      // Per-report change requests — when a non-admin "requests edit access"
+      // for a historical report, a record of that session is appended here.
+      // Today the client writes status='auto-approved' directly. Once a
+      // manual approval flow is added, status will start as 'pending' and
+      // admins (via Cloud Function or an admin-only update rule) will
+      // mutate it to approved/rejected. Update/delete are blocked for now
+      // so the audit trail stays tamper-proof.
+      match /changeRequests/{requestId} {
+        allow read:           if request.auth != null;
+        allow create:         if request.auth != null;
+        allow update, delete: if false;
+      }
     }
 
     // Turnover records — authenticated users can read, create, update, delete

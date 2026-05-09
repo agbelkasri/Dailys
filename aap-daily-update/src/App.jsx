@@ -11,6 +11,7 @@ import { DailyReport } from './components/report/DailyReport';
 import { AbsenteeReport } from './components/absentee/AbsenteeReport';
 import { TurnoverReport } from './components/turnover/TurnoverReport';
 import { exportToExcel, printReport } from './services/exportService';
+import { submitChangeRequest } from './services/reportService';
 import { auth } from './firebase';
 
 // Plant Daily subscriptions live here so they only run when this tab is active
@@ -25,8 +26,38 @@ function PlantDailyTab({ plantId, user, activeTab, onTabChange, onLogout, isDark
     displayDate,
   } = useDateNavigation();
 
-  // Admins can edit any day; non-admins are read-only on previous days
-  const isReadOnly = isPastDay && !isAdmin;
+  // Change-request unlock: a non-admin viewing a past day can click "Request
+  // Edit Access" to temporarily unlock the page, make their edits, then
+  // click the same button (now labelled "Submit Changes") which logs a
+  // changeRequest doc and re-locks.
+  //
+  // The state is keyed to (plant, date) so navigating to a different report
+  // automatically returns to the locked default — when `editRequest.key`
+  // doesn't match the current key, both `editRequested` and `submitState`
+  // derive to safe defaults during render. No state-syncing effect needed.
+  const currentKey = `${plantId}_${selectedDate}`;
+  const [editRequest, setEditRequest] = useState({ key: null, submitState: 'idle' });
+  const editRequested = editRequest.key === currentKey;
+  const submitState   = editRequested ? editRequest.submitState : 'idle';
+
+  // Admins edit any day; non-admins edit today + yesterday (1-day grace);
+  // any other day is read-only unless the user has actively requested edit
+  // access for it via the change-request button.
+  const isReadOnly = isPastDay && !isAdmin && !editRequested;
+
+  const handleRequestEdit  = () => setEditRequest({ key: currentKey, submitState: 'idle' });
+  const handleCancelEdit   = () => setEditRequest({ key: null,        submitState: 'idle' });
+
+  const handleSubmitChanges = async () => {
+    setEditRequest({ key: currentKey, submitState: 'submitting' });
+    try {
+      await submitChangeRequest(currentKey);
+      setEditRequest({ key: null, submitState: 'idle' });
+    } catch (err) {
+      console.error('Change request submission failed:', err);
+      setEditRequest({ key: currentKey, submitState: 'error' });
+    }
+  };
 
   const reportId = `${plantId}_${selectedDate}`;
 
@@ -71,6 +102,14 @@ function PlantDailyTab({ plantId, user, activeTab, onTabChange, onLogout, isDark
           presenceMap={presenceMap}
           onFocusSection={setActiveSection}
           onBlurSection={clearActiveSection}
+          /* Change-request controls — only meaningful when the page would
+             otherwise be read-only (past day for non-admin). */
+          canRequestEdit={isPastDay && !isAdmin}
+          editRequested={editRequested}
+          submitState={submitState}
+          onRequestEdit={handleRequestEdit}
+          onSubmitChanges={handleSubmitChanges}
+          onCancelEdit={handleCancelEdit}
         />
       </main>
     </>
