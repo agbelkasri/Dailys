@@ -3,9 +3,10 @@ import { PLANTS } from '../../constants/absences';
 import { SubmitView } from './SubmitView';
 import { DailyView } from './DailyView';
 import { MonthlyView } from './MonthlyView';
+import { OverviewView } from './OverviewView';
 import styles from './AbsenteeReport.module.css';
 
-export function AbsenteeReport({ user }) {
+export function AbsenteeReport() {
   const [subTab, setSubTab] = useState('daily');
   const [plantFilter, setPlantFilter] = useState('');
 
@@ -14,9 +15,10 @@ export function AbsenteeReport({ user }) {
       <div className={styles.subNav}>
         <div className={styles.tabs}>
           {[
-            { id: 'submit',  label: 'Submit Absence' },
-            { id: 'daily',   label: 'Daily View' },
-            { id: 'monthly', label: 'Monthly View' },
+            { id: 'submit',   label: 'Submit Absence' },
+            { id: 'daily',    label: 'Daily View'     },
+            { id: 'monthly',  label: 'Monthly View'   },
+            { id: 'overview', label: 'Overview'       },
           ].map(t => (
             <button
               key={t.id}
@@ -46,14 +48,17 @@ export function AbsenteeReport({ user }) {
       </div>
 
       <div className={styles.content}>
-        {subTab === 'submit'  && (
+        {subTab === 'submit'   && (
           <SubmitView onSuccess={() => setSubTab('daily')} />
         )}
-        {subTab === 'daily'   && (
+        {subTab === 'daily'    && (
           <DailyView plantFilter={plantFilter} />
         )}
-        {subTab === 'monthly' && (
+        {subTab === 'monthly'  && (
           <MonthlyView plantFilter={plantFilter} />
+        )}
+        {subTab === 'overview' && (
+          <OverviewView plantFilter={plantFilter} />
         )}
       </div>
     </div>
