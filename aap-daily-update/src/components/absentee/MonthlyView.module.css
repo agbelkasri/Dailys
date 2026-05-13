@@ -127,3 +127,43 @@
   font-size: 13px;
   padding: 20px 0;
 }
+
+/* ── Workforce-% header (above the % stat cards) ── */
+.rateHeader {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  margin-bottom: 8px;
+  flex-wrap: wrap;
+}
+
+.rateHeaderText {
+  font-size: 12px;
+  font-weight: 700;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  color: var(--plant-primary-text);
+}
+
+.rateDenominator {
+  font-weight: 500;
+  color: var(--text-muted);
+  text-transform: none;
+  letter-spacing: normal;
+}
+
+.headcountWarning {
+  background: #fff8e1;
+  border: 1px solid #ffe082;
+  color: #795548;
+  padding: 8px 14px;
+  border-radius: 6px;
+  font-size: 13px;
+  margin-bottom: 12px;
+}
+:global([data-theme='dark']) .headcountWarning {
+  background: #3a2f0a;
+  border-color: #8a6d1f;
+  color: #ffe9a8;
+}

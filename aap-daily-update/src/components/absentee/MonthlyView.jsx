@@ -1,7 +1,9 @@
 import { useState, useMemo } from 'react';
 import { format, addMonths, subMonths } from 'date-fns';
 import { useMonthlyAbsences } from '../../hooks/useMonthlyAbsences';
+import { useMonthlyStaffing } from '../../hooks/useMonthlyStaffing';
 import { PLANTS, REASON_LABELS } from '../../constants/absences';
+import { parseStaffingIssues, parseStaffingHeadcount } from '../../utils/parseStaffingIssues';
 import { StatsCard, StatsGrid } from './StatsCard';
 import { CalendarHeatmap } from './charts/CalendarHeatmap';
 import { BarChart } from './charts/BarChart';
@@ -39,6 +41,12 @@ export function MonthlyView({ plantFilter }) {
   // Previous month for trend comparison
   const prevRef = subMonths(refDate, 1);
   const { absences: prevAbsences } = useMonthlyAbsences(prevRef.getFullYear(), prevRef.getMonth());
+
+  // Live staffing-issues comments for every weekday in the month, used to
+  // compute workforce-percent stats (same formula as the Daily View, just
+  // summed across the month into person-days).
+  const { byKey: monthlyStaffing, loading: staffingLoading } =
+    useMonthlyStaffing(year, month, plantFilter);
 
   // Apply plant filter
   const absences = useMemo(() =>
@@ -160,6 +168,52 @@ export function MonthlyView({ plantFilter }) {
     };
   }, [absences, prevAbsences, year, month, plantFilter]);
 
+  // ── Workforce-% over the month (person-day basis) ────────────────────────
+  // For each day's staffing comment we parse the DL headcount and the DL
+  // absences. Sum across the month:
+  //   denominator = Σ (DL headcount for each day that has one)
+  //   numerator   = Σ (DL absences on those same days)
+  // Industry-standard absenteeism rate. Days with no headcount line are
+  // skipped entirely — including them would inflate the percentage by
+  // counting absences against a 0 denominator. Excluding a day from both
+  // sides keeps the rate honest at the cost of slightly fewer data points
+  // when supervisors forget the totals line.
+  const rate = useMemo(() => {
+    let dlPlanned = 0, dlUnplanned = 0, dlPersonDays = 0;
+    let daysWithHeadcount = 0;
+
+    for (const entry of Object.values(monthlyStaffing)) {
+      const text = entry?.comments;
+      if (!text) continue;
+      const hc = parseStaffingHeadcount(text);
+      if (hc?.DL_total == null) continue;          // skip days w/ no headcount
+
+      daysWithHeadcount++;
+      dlPersonDays += hc.DL_total;
+
+      const parsed = parseStaffingIssues(text, { plantId: entry.plantId, date: entry.date });
+      for (const a of parsed) {
+        if (a.laborType !== 'direct') continue;
+        if (a.type === 'planned')   dlPlanned++;
+        if (a.type === 'unplanned') dlUnplanned++;
+      }
+    }
+
+    const dlTotal = dlPlanned + dlUnplanned;
+    const pct = (n) => dlPersonDays > 0
+      ? ((n / dlPersonDays) * 100).toFixed(1) + '%'
+      : '—';
+
+    return {
+      personDays:   dlPersonDays,
+      daysCounted:  daysWithHeadcount,
+      dlPlanned, dlUnplanned, dlTotal,
+      totalPct:     pct(dlTotal),
+      plannedPct:   pct(dlPlanned),
+      unplannedPct: pct(dlUnplanned),
+    };
+  }, [monthlyStaffing]);
+
   const monthLabel = format(refDate, 'MMMM yyyy');
 
   // 6-month trend line — use monthly totals from absences data grouped by month
@@ -187,6 +241,51 @@ export function MonthlyView({ plantFilter }) {
         <div className={styles.errorMsg}>{error}</div>
       ) : (
         <>
+          {/* Workforce-% — same formula as Daily View, summed across the
+              month as person-days. Hidden while monthly staffing snapshots
+              are loading so we don't flash the "—" placeholders. */}
+          <div className={styles.rateHeader}>
+            <div className={styles.rateHeaderText}>
+              Monthly absenteeism rate — {plantFilter || 'all plants'}
+              {rate.personDays > 0 && (
+                <span className={styles.rateDenominator}>
+                  {' '}({rate.dlTotal} of {rate.personDays} FT DL person-days
+                  across {rate.daysCounted} day{rate.daysCounted !== 1 ? 's' : ''})
+                </span>
+              )}
+            </div>
+          </div>
+
+          {rate.personDays === 0 && !staffingLoading && (
+            <div className={styles.headcountWarning}>
+              No headcount lines found in this month's Staffing Issues
+              comments. Add a line like <code>DL = 1st - 26, 2nd - 11</code>
+              (or <code>DL = 23</code>) to the daily comments to enable
+              percentage calculations.
+            </div>
+          )}
+
+          <StatsGrid>
+            <StatsCard
+              label="Total Absenteeism %"
+              value={rate.totalPct}
+              sub={`${rate.dlTotal} of ${rate.personDays || '—'} person-days`}
+              accent="#1a3a5c"
+            />
+            <StatsCard
+              label="Planned %"
+              value={rate.plannedPct}
+              sub={`${rate.dlPlanned} of ${rate.personDays || '—'} person-days`}
+              accent="#2563eb"
+            />
+            <StatsCard
+              label="Unplanned %"
+              value={rate.unplannedPct}
+              sub={`${rate.dlUnplanned} of ${rate.personDays || '—'} person-days`}
+              accent="#dc2626"
+            />
+          </StatsGrid>
+
           {/* Stats */}
           <StatsGrid>
             <StatsCard label="Total Absences" value={data.total}     accent="#1a3a5c" sub={data.momLabel} />
