@@ -2,26 +2,21 @@ import { useState, useMemo } from 'react';
 import { format, parseISO } from 'date-fns';
 import { getTodayDate, prevWeekday, nextWeekday } from '../../hooks/useDateNavigation';
 import { useAbsences } from '../../hooks/useAbsences';
-import { useHeadcounts } from '../../hooks/useHeadcounts';
-import { useIsAdmin } from '../../hooks/useIsAdmin';
+import { useStaffingByPlant } from '../../hooks/useStaffingByPlant';
 import { deleteAbsence } from '../../services/absenceService';
-import { totalDirectLabor } from '../../services/headcountService';
 import { PLANTS } from '../../constants/absences';
-import { auth } from '../../firebase';
+import { parseStaffingIssues, parseStaffingHeadcount } from '../../utils/parseStaffingIssues';
 import { StatsCard, StatsGrid } from './StatsCard';
 import { AbsenceTable } from './AbsenceTable';
 import { AbsenceFormModal } from './AbsenceFormModal';
-import { HeadcountModal } from './HeadcountModal';
 import styles from './DailyView.module.css';
 
 export function DailyView({ plantFilter }) {
   const [selectedDate, setSelectedDate] = useState(getTodayDate());
   const [editingAbsence, setEditingAbsence] = useState(null);
-  const [showHeadcount,  setShowHeadcount]  = useState(false);
 
   const { absences, loading, error } = useAbsences(selectedDate);
-  const { headcounts }                = useHeadcounts();
-  const isAdmin                       = useIsAdmin(auth.currentUser);
+  const staffingByPlant              = useStaffingByPlant(selectedDate, plantFilter);
 
   const filtered = useMemo(() =>
     plantFilter ? absences.filter(a => a.plantId === plantFilter) : absences,
@@ -39,34 +34,52 @@ export function DailyView({ plantFilter }) {
     return { total, planned, unplanned, direct, indirect, plants, totalHours };
   }, [filtered]);
 
-  // ── Absenteeism percentage of full-time direct-labor workforce ───────────
-  // Denominator: sum of DL_1st + DL_2nd from /headcounts for the plant(s) in
-  // scope. When no plant filter is applied, sum across all three plants.
-  // Numerator: absences on the selected day where laborType=direct AND
-  // (employmentType is full_time OR missing — defaults to full_time per the
-  // submit form). Recomputes whenever absences or headcounts change — both
-  // come from live Firestore subscriptions.
+  // ── Absenteeism % of full-time direct-labor workforce ────────────────────
+  // Both numerator AND denominator come from each plant's Staffing Issues
+  // comment for the selected day:
+  //
+  //   Planned Absenteeism:
+  //     DL:  1st shift: Nate Fawley       ← parsed → planned DL absence
+  //     IDL: 1st shift:
+  //     DL:  2nd Shift:
+  //     IDL: 2nd Shift:
+  //   DL = 1st - 26, 2nd - 11             ← parsed → headcount: 37 FT DL
+  //
+  // No separate headcount table — the supervisor enters everything in the
+  // daily report's Staffing Issues section, and these percentages recompute
+  // live (Firestore onSnapshot) as that comment is edited. When "All Plants"
+  // is selected, numerators and denominators are summed across all three.
   const rate = useMemo(() => {
     const plantsInScope = plantFilter ? [plantFilter] : PLANTS.map(p => p.id);
-    const denominator = plantsInScope.reduce(
-      (sum, pid) => sum + totalDirectLabor(headcounts[pid]),
-      0
-    );
 
-    const isFullTimeDL = (a) =>
-      (a.laborType || 'direct') === 'direct' &&
-      (a.employmentType || 'full_time') === 'full_time';
+    let dlPlanned = 0;
+    let dlUnplanned = 0;
+    let dlHeadcount = 0;
 
-    const dlPlanned   = filtered.filter(a => isFullTimeDL(a) && a.type === 'planned').length;
-    const dlUnplanned = filtered.filter(a => isFullTimeDL(a) && a.type === 'unplanned').length;
-    const dlTotal     = dlPlanned + dlUnplanned;
+    for (const plantId of plantsInScope) {
+      const text = staffingByPlant[plantId]?.comments;
+      if (!text) continue;
 
-    const pct = (n) => denominator > 0
-      ? ((n / denominator) * 100).toFixed(1) + '%'
+      const hc = parseStaffingHeadcount(text);
+      if (hc) {
+        dlHeadcount += (hc.DL_1st || 0) + (hc.DL_2nd || 0);
+      }
+
+      const parsed = parseStaffingIssues(text, { plantId, date: selectedDate });
+      for (const a of parsed) {
+        if (a.laborType !== 'direct') continue;
+        if (a.type === 'planned')   dlPlanned++;
+        if (a.type === 'unplanned') dlUnplanned++;
+      }
+    }
+
+    const dlTotal = dlPlanned + dlUnplanned;
+    const pct = (n) => dlHeadcount > 0
+      ? ((n / dlHeadcount) * 100).toFixed(1) + '%'
       : '—';
 
     return {
-      denominator,
+      headcount:    dlHeadcount,
       dlPlanned,
       dlUnplanned,
       dlTotal,
@@ -74,11 +87,9 @@ export function DailyView({ plantFilter }) {
       plannedPct:   pct(dlPlanned),
       unplannedPct: pct(dlUnplanned),
     };
-  }, [filtered, headcounts, plantFilter]);
+  }, [staffingByPlant, plantFilter, selectedDate]);
 
-  const scopeLabel = plantFilter
-    ? `FT DL @ ${plantFilter}`
-    : 'FT DL all plants';
+  const scopeLabel = plantFilter ? plantFilter : 'all plants';
 
   function goToPrev() {
     setSelectedDate(prevWeekday(selectedDate));
@@ -119,32 +130,24 @@ export function DailyView({ plantFilter }) {
         )}
       </div>
 
-      {/* Absenteeism rate — % of full-time direct-labor workforce out today */}
+      {/* Absenteeism rate — % of FT DL workforce out this day, parsed live
+          from the Staffing Issues comment(s) for the selected plant(s). */}
       <div className={styles.rateHeader}>
         <div className={styles.rateHeaderText}>
-          Absenteeism rate — share of {scopeLabel} workforce out this day
-          {rate.denominator > 0 && (
+          Absenteeism rate — {scopeLabel}
+          {rate.headcount > 0 && (
             <span className={styles.rateDenominator}>
-              {' '}(denominator: {rate.denominator})
+              {' '}({rate.dlTotal} of {rate.headcount} FT DL workers)
             </span>
           )}
         </div>
-        {isAdmin && (
-          <button
-            type="button"
-            className={styles.headcountBtn}
-            onClick={() => setShowHeadcount(true)}
-          >
-            {rate.denominator > 0 ? 'Edit headcount' : 'Set headcount'}
-          </button>
-        )}
       </div>
 
-      {rate.denominator === 0 && (
+      {rate.headcount === 0 && (
         <div className={styles.headcountWarning}>
-          {isAdmin
-            ? 'No headcount set yet — click "Set headcount" to enable percentage calculations.'
-            : 'Percentages will appear once an admin enters the plant headcount.'}
+          Percentages need a headcount line in the Staffing Issues comment
+          (e.g. <code>DL = 1st - 26, 2nd - 11</code>). Once present, this
+          section updates automatically.
         </div>
       )}
 
@@ -152,19 +155,19 @@ export function DailyView({ plantFilter }) {
         <StatsCard
           label="Total Absenteeism %"
           value={rate.totalPct}
-          sub={`${rate.dlTotal} of ${rate.denominator || '—'} FT DL`}
+          sub={`${rate.dlTotal} of ${rate.headcount || '—'} FT DL`}
           accent="#1a3a5c"
         />
         <StatsCard
           label="Planned %"
           value={rate.plannedPct}
-          sub={`${rate.dlPlanned} of ${rate.denominator || '—'} FT DL`}
+          sub={`${rate.dlPlanned} of ${rate.headcount || '—'} FT DL`}
           accent="#2563eb"
         />
         <StatsCard
           label="Unplanned %"
           value={rate.unplannedPct}
-          sub={`${rate.dlUnplanned} of ${rate.denominator || '—'} FT DL`}
+          sub={`${rate.dlUnplanned} of ${rate.headcount || '—'} FT DL`}
           accent="#dc2626"
         />
       </StatsGrid>
@@ -198,14 +201,6 @@ export function DailyView({ plantFilter }) {
         <AbsenceFormModal
           absence={editingAbsence}
           onClose={() => setEditingAbsence(null)}
-        />
-      )}
-
-      {/* Headcount edit modal (admin-only) */}
-      {showHeadcount && (
-        <HeadcountModal
-          headcounts={headcounts}
-          onClose={() => setShowHeadcount(false)}
         />
       )}
     </div>

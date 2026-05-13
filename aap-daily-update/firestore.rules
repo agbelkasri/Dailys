@@ -2,21 +2,6 @@ rules_version = '2';
 service cloud.firestore {
   match /databases/{database}/documents {
 
-    // Whether the authenticated user's email appears in /config/admins.emails.
-    // Tolerates either-case storage by comparing lowercased on both sides —
-    // matches the client-side check in useIsAdmin.js. Single get() call is
-    // reused within this rule evaluation.
-    function isAdmin() {
-      return request.auth != null
-        && request.auth.token.email != null
-        && (
-          request.auth.token.email.lower()
-            in get(/databases/$(database)/documents/config/admins).data.emails
-          || request.auth.token.email
-            in get(/databases/$(database)/documents/config/admins).data.emails
-        );
-    }
-
     // Email distribution config — readable by all authenticated users, writable only by Cloud Functions (server-side)
     match /config/{docId} {
       allow read: if request.auth != null;
@@ -72,15 +57,6 @@ service cloud.firestore {
         && request.resource.data.type in ['voluntary', 'involuntary'];
       allow update: if request.auth != null;
       allow delete: if request.auth != null;
-    }
-
-    // Plant headcount — used as the denominator for the Daily Absentee
-    // percentage stats. One doc per plant: { DL_1st, DL_2nd, IDL_1st,
-    // IDL_2nd, updatedAt, updatedBy }. Read by anyone authenticated;
-    // writes restricted to admins (per /config/admins).
-    match /headcounts/{plantId} {
-      allow read:  if request.auth != null;
-      allow write: if isAdmin();
     }
 
     // Absentee records — authenticated users can read, create, update, delete

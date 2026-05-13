@@ -59,7 +59,10 @@ function splitNameAndNote(raw) {
       break;
     }
   }
-  const name  = nameWords.join(' ') || raw.trim();
+  // Empty when no name-word was found — callers skip via `if (!name) continue`.
+  // Previously this fell back to the raw token, which produced ghost absences
+  // like "1st shift:" or "= 1st - 26" when the line had no actual names.
+  const name  = nameWords.join(' ');
   const notes = words.slice(nameWords.length).join(' ');
   return { name, notes };
 }
@@ -98,6 +101,13 @@ export function parseStaffingIssues(text, { plantId, date }) {
 
     // Skip lines before any header or inside the "Other" block
     if (!currentType || currentType === 'other') continue;
+
+    // Skip totals/headcount lines — they're parsed by parseStaffingHeadcount.
+    // Without this, a line like "DL = 1st - 26, 2nd - 11" would match
+    // LABOR_LINE_RE and the digits would be misread as absent-employee names.
+    // Catches embedded totals too (e.g. "IDL: 2nd Shift:  & DL = 1st - 26,
+    // 2nd - 11" on a single line).
+    if (DL_TOTALS_RE.test(line) || IDL_TOTALS_RE.test(line)) continue;
 
     // ── Try to parse a labor line ────────────────────────────────────────────
     const m = line.match(LABOR_LINE_RE);
@@ -142,4 +152,67 @@ export function parseStaffingIssues(text, { plantId, date }) {
   }
 
   return results;
+}
+
+/**
+ * Matches the "headcount totals" line that appears at the end of a
+ * Staffing Issues comment, e.g.
+ *
+ *   DL = 1st - 26, 2nd - 11
+ *   DL: 1st - 26, 2nd - 11
+ *   DL  1st: 26  2nd: 11
+ *   IDL = 1st - 5, 2nd - 2
+ *
+ * Both shifts must appear on the same line with literal digits — this is
+ * what distinguishes a totals line from an absentee line like
+ * `DL: 1st shift: Nate Fawley` (no digit after 1st).
+ *
+ * Capture groups:
+ *   1 — 1st-shift headcount
+ *   2 — 2nd-shift headcount
+ */
+const DL_TOTALS_RE  = /\bDL\b[^a-zA-Z\d]{0,8}1st[^a-zA-Z\d]{0,4}(\d+)[^a-zA-Z\d]{1,8}2nd[^a-zA-Z\d]{0,4}(\d+)/i;
+const IDL_TOTALS_RE = /\bIDL\b[^a-zA-Z\d]{0,8}1st[^a-zA-Z\d]{0,4}(\d+)[^a-zA-Z\d]{1,8}2nd[^a-zA-Z\d]{0,4}(\d+)/i;
+
+/**
+ * Extracts plant headcount from a Staffing Issues comment. Looks for lines
+ * containing both 1st and 2nd shift counts as literal digits. Returns
+ * `null` when no totals line is found.
+ *
+ * The denominator for daily Absenteeism % cards on the Daily View is
+ * read from this — so as soon as the supervisor types "DL = 1st - 26,
+ * 2nd - 11" into the Staffing Issues comment, the percentage updates.
+ *
+ * Shape:
+ *   { DL_1st, DL_2nd, IDL_1st, IDL_2nd }   // missing values are null
+ */
+export function parseStaffingHeadcount(text) {
+  if (!text) return null;
+  const plainText = stripHtml(text);
+  const lines = plainText.split(/\r?\n/).map(l => l.trim()).filter(Boolean);
+
+  const result = { DL_1st: null, DL_2nd: null, IDL_1st: null, IDL_2nd: null };
+  let found = false;
+
+  for (const line of lines) {
+    if (result.DL_1st === null) {
+      const m = line.match(DL_TOTALS_RE);
+      if (m) {
+        result.DL_1st = parseInt(m[1], 10);
+        result.DL_2nd = parseInt(m[2], 10);
+        found = true;
+      }
+    }
+    if (result.IDL_1st === null) {
+      const m = line.match(IDL_TOTALS_RE);
+      if (m) {
+        result.IDL_1st = parseInt(m[1], 10);
+        result.IDL_2nd = parseInt(m[2], 10);
+        found = true;
+      }
+    }
+    if (result.DL_1st !== null && result.IDL_1st !== null) break;
+  }
+
+  return found ? result : null;
 }
