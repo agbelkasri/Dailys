@@ -15,8 +15,9 @@ export function DailyView({ plantFilter }) {
   const [selectedDate, setSelectedDate] = useState(getTodayDate());
   const [editingAbsence, setEditingAbsence] = useState(null);
 
-  const { absences, loading, error } = useAbsences(selectedDate);
-  const staffingByPlant              = useStaffingByPlant(selectedDate, plantFilter);
+  const { absences, loading, error }              = useAbsences(selectedDate);
+  const { byPlant: staffingByPlant,
+          loading: staffingLoading }              = useStaffingByPlant(selectedDate, plantFilter);
 
   const filtered = useMemo(() =>
     plantFilter ? absences.filter(a => a.plantId === plantFilter) : absences,
@@ -143,7 +144,7 @@ export function DailyView({ plantFilter }) {
         </div>
       </div>
 
-      {rate.headcount === 0 && (
+      {rate.headcount === 0 && !staffingLoading && (
         <div className={styles.headcountWarning}>
           Percentages need a headcount line in the Staffing Issues comment
           (e.g. <code>DL = 1st - 26, 2nd - 11</code>). Once present, this
