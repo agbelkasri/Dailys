@@ -61,9 +61,9 @@ export function DailyView({ plantFilter }) {
       if (!text) continue;
 
       const hc = parseStaffingHeadcount(text);
-      if (hc) {
-        dlHeadcount += (hc.DL_1st || 0) + (hc.DL_2nd || 0);
-      }
+      // DL_total resolves to (DL_1st + DL_2nd) for EAP-style shift-split
+      // lines or to the single total for GAP/SLP-style "DL = N" lines.
+      if (hc?.DL_total != null) dlHeadcount += hc.DL_total;
 
       const parsed = parseStaffingIssues(text, { plantId, date: selectedDate });
       for (const a of parsed) {

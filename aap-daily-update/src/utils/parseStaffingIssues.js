@@ -106,8 +106,9 @@ export function parseStaffingIssues(text, { plantId, date }) {
     // Without this, a line like "DL = 1st - 26, 2nd - 11" would match
     // LABOR_LINE_RE and the digits would be misread as absent-employee names.
     // Catches embedded totals too (e.g. "IDL: 2nd Shift:  & DL = 1st - 26,
-    // 2nd - 11" on a single line).
-    if (DL_TOTALS_RE.test(line) || IDL_TOTALS_RE.test(line)) continue;
+    // 2nd - 11" on a single line), as well as total-only formats like
+    // "DL = 23" used by GAP and SLP.
+    if (isHeadcountLine(line)) continue;
 
     // ── Try to parse a labor line ────────────────────────────────────────────
     const m = line.match(LABOR_LINE_RE);
@@ -155,64 +156,97 @@ export function parseStaffingIssues(text, { plantId, date }) {
 }
 
 /**
- * Matches the "headcount totals" line that appears at the end of a
- * Staffing Issues comment, e.g.
+ * Headcount lines come in two shapes:
  *
- *   DL = 1st - 26, 2nd - 11
- *   DL: 1st - 26, 2nd - 11
- *   DL  1st: 26  2nd: 11
- *   IDL = 1st - 5, 2nd - 2
+ *   1. Shift-split (EAP convention)
+ *        DL =  1st - 26,  2nd - 11
+ *        IDL = 1st - 5,   2nd - 2
  *
- * Both shifts must appear on the same line with literal digits — this is
- * what distinguishes a totals line from an absentee line like
- * `DL: 1st shift: Nate Fawley` (no digit after 1st).
+ *   2. Total-only (GAP / SLP convention)
+ *        DL = 23
+ *        IDL = 9
  *
- * Capture groups:
- *   1 — 1st-shift headcount
- *   2 — 2nd-shift headcount
+ * The `=` sign is the disambiguator: in real comments, `=` denotes the
+ * "Total Present" / "Active Staff" workforce we want as the denominator,
+ * while `:` denotes other variants we don't want ("Total Employees minus
+ * LOA", labor lines, etc.). So total-only matching is gated on `=`.
  */
-const DL_TOTALS_RE  = /\bDL\b[^a-zA-Z\d]{0,8}1st[^a-zA-Z\d]{0,4}(\d+)[^a-zA-Z\d]{1,8}2nd[^a-zA-Z\d]{0,4}(\d+)/i;
-const IDL_TOTALS_RE = /\bIDL\b[^a-zA-Z\d]{0,8}1st[^a-zA-Z\d]{0,4}(\d+)[^a-zA-Z\d]{1,8}2nd[^a-zA-Z\d]{0,4}(\d+)/i;
+const DL_SHIFT_RE  = /\bDL\b[^a-zA-Z\d]{0,8}1st[^a-zA-Z\d]{0,4}(\d+)[^a-zA-Z\d]{1,8}2nd[^a-zA-Z\d]{0,4}(\d+)/i;
+const IDL_SHIFT_RE = /\bIDL\b[^a-zA-Z\d]{0,8}1st[^a-zA-Z\d]{0,4}(\d+)[^a-zA-Z\d]{1,8}2nd[^a-zA-Z\d]{0,4}(\d+)/i;
+
+// Total-only — DL/IDL followed by `=` then a number that's NOT the start
+// of a "1st" / "2nd" shift designator. Negative lookahead prevents
+// matching "DL = 1st - 26, 2nd - 11" with the leading "1" as a total.
+// Allowing only `=` (not `:`) ensures lines like "DL: 39 (1st -27 - 2nd 12)"
+// from the "Total Employees minus LOA" block don't compete.
+const DL_TOTAL_RE  = /\bDL\b\s*=\s*(\d+)\b(?!\s*(?:st|nd)\b)/i;
+const IDL_TOTAL_RE = /\bIDL\b\s*=\s*(\d+)\b(?!\s*(?:st|nd)\b)/i;
+
+/** Combined predicate for "this line is a headcount totals line" — used
+ *  by parseStaffingIssues() to skip it during absence parsing. */
+function isHeadcountLine(line) {
+  return DL_SHIFT_RE.test(line)
+      || IDL_SHIFT_RE.test(line)
+      || DL_TOTAL_RE.test(line)
+      || IDL_TOTAL_RE.test(line);
+}
 
 /**
- * Extracts plant headcount from a Staffing Issues comment. Looks for lines
- * containing both 1st and 2nd shift counts as literal digits. Returns
- * `null` when no totals line is found.
- *
- * The denominator for daily Absenteeism % cards on the Daily View is
- * read from this — so as soon as the supervisor types "DL = 1st - 26,
- * 2nd - 11" into the Staffing Issues comment, the percentage updates.
+ * Extracts plant headcount from a Staffing Issues comment. Returns the
+ * resolved total per labor type (DL / IDL), preferring a shift-split
+ * line when present and falling back to a total-only line otherwise.
+ * When the same line appears multiple times across the comment (e.g.
+ * "Total Employees" and "Total Present"), the LAST match wins — which
+ * is "Total Present" in practice since it appears later in the document.
  *
  * Shape:
- *   { DL_1st, DL_2nd, IDL_1st, IDL_2nd }   // missing values are null
+ *   {
+ *     DL_1st, DL_2nd,    // shift breakdown if available, else null
+ *     IDL_1st, IDL_2nd,
+ *     DL_total,          // resolved total used as the percentage denominator
+ *     IDL_total,
+ *   }
+ *
+ * Returns null when no headcount line of either shape is found.
  */
 export function parseStaffingHeadcount(text) {
   if (!text) return null;
   const plainText = stripHtml(text);
   const lines = plainText.split(/\r?\n/).map(l => l.trim()).filter(Boolean);
 
-  const result = { DL_1st: null, DL_2nd: null, IDL_1st: null, IDL_2nd: null };
-  let found = false;
+  let DL_1st = null, DL_2nd = null, DL_totalOnly = null;
+  let IDL_1st = null, IDL_2nd = null, IDL_totalOnly = null;
 
   for (const line of lines) {
-    if (result.DL_1st === null) {
-      const m = line.match(DL_TOTALS_RE);
-      if (m) {
-        result.DL_1st = parseInt(m[1], 10);
-        result.DL_2nd = parseInt(m[2], 10);
-        found = true;
-      }
+    // ── DL ──────────────────────────────────────────────────────────────
+    const dlShift = line.match(DL_SHIFT_RE);
+    if (dlShift) {
+      DL_1st = parseInt(dlShift[1], 10);
+      DL_2nd = parseInt(dlShift[2], 10);
+    } else {
+      const dlT = line.match(DL_TOTAL_RE);
+      if (dlT) DL_totalOnly = parseInt(dlT[1], 10);
     }
-    if (result.IDL_1st === null) {
-      const m = line.match(IDL_TOTALS_RE);
-      if (m) {
-        result.IDL_1st = parseInt(m[1], 10);
-        result.IDL_2nd = parseInt(m[2], 10);
-        found = true;
-      }
+
+    // ── IDL ─────────────────────────────────────────────────────────────
+    const idlShift = line.match(IDL_SHIFT_RE);
+    if (idlShift) {
+      IDL_1st = parseInt(idlShift[1], 10);
+      IDL_2nd = parseInt(idlShift[2], 10);
+    } else {
+      const idlT = line.match(IDL_TOTAL_RE);
+      if (idlT) IDL_totalOnly = parseInt(idlT[1], 10);
     }
-    if (result.DL_1st !== null && result.IDL_1st !== null) break;
   }
 
-  return found ? result : null;
+  const DL_total = (DL_1st !== null && DL_2nd !== null)
+    ? DL_1st + DL_2nd
+    : DL_totalOnly;
+  const IDL_total = (IDL_1st !== null && IDL_2nd !== null)
+    ? IDL_1st + IDL_2nd
+    : IDL_totalOnly;
+
+  if (DL_total === null && IDL_total === null) return null;
+
+  return { DL_1st, DL_2nd, IDL_1st, IDL_2nd, DL_total, IDL_total };
 }
