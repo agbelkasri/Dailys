@@ -41,6 +41,17 @@ const LABOR_LINE_RE = /^(IDL|DL)[: ]+(?:(\d)(?:st|nd)\s*shift\s*[:\-–—]+\s*)
 const NAME_CONNECTORS = /^(de|la|van|von|del|das|do|du|los|las|el|al)$/i;
 
 /**
+ * Tokens that look like names (start with uppercase) but are clearly
+ * placeholders meaning "nobody". A line like `IDL: N/A` shouldn't
+ * produce a phantom absence for an employee literally named N/A.
+ * Compared case-insensitively against the final extracted name, with
+ * any trailing punctuation already stripped.
+ */
+const NON_NAME_PLACEHOLDERS = new Set([
+  'n/a', 'na', 'none', 'no one', 'nobody', 'tbd', 'tba',
+]);
+
+/**
  * Given a raw token like "Chrissi Adams let sick at 7:45am." extract just
  * the name (leading capitalised words) and treat the rest as a note.
  *
@@ -134,6 +145,8 @@ export function parseStaffingIssues(text, { plantId, date }) {
       // Separate the proper name from any trailing note text
       const { name, notes } = splitNameAndNote(cleaned);
       if (!name) continue;
+      // Drop "N/A" / "None" / "TBD" placeholders that look like names but aren't
+      if (NON_NAME_PLACEHOLDERS.has(name.toLowerCase())) continue;
 
       results.push({
         employeeName:   name,
