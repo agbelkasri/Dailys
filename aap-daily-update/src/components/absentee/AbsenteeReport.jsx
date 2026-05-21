@@ -3,6 +3,7 @@ import { PLANTS } from '../../constants/absences';
 import { SubmitView } from './SubmitView';
 import { DailyView } from './DailyView';
 import { MonthlyView } from './MonthlyView';
+import { YearlyView } from './YearlyView';
 import styles from './AbsenteeReport.module.css';
 
 export function AbsenteeReport() {
@@ -17,6 +18,7 @@ export function AbsenteeReport() {
             { id: 'submit',  label: 'Submit Absence' },
             { id: 'daily',   label: 'Daily View'     },
             { id: 'monthly', label: 'Monthly View'   },
+            { id: 'ytd',     label: 'YTD'            },
           ].map(t => (
             <button
               key={t.id}
@@ -54,6 +56,9 @@ export function AbsenteeReport() {
         )}
         {subTab === 'monthly' && (
           <MonthlyView plantFilter={plantFilter} />
+        )}
+        {subTab === 'ytd'     && (
+          <YearlyView plantFilter={plantFilter} />
         )}
       </div>
     </div>
