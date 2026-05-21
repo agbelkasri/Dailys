@@ -179,38 +179,57 @@ export function MonthlyView({ plantFilter }) {
   // sides keeps the rate honest at the cost of slightly fewer data points
   // when supervisors forget the totals line.
   const rate = useMemo(() => {
-    let dlPlanned = 0, dlUnplanned = 0, dlPersonDays = 0;
-    let daysWithHeadcount = 0;
+    let dlPlanned = 0, dlUnplanned = 0, dlPersonDays = 0, dlDaysCounted = 0;
+    let idlPlanned = 0, idlUnplanned = 0, idlPersonDays = 0;
 
     for (const entry of Object.values(monthlyStaffing)) {
       const text = entry?.comments;
       if (!text) continue;
       const hc = parseStaffingHeadcount(text);
-      if (hc?.DL_total == null) continue;          // skip days w/ no headcount
+      if (!hc) continue;
 
-      daysWithHeadcount++;
-      dlPersonDays += hc.DL_total;
-
+      // DL and IDL are aggregated independently — a day might have one
+      // headcount line but not the other. Excluding a day from a single
+      // labor type (instead of both) keeps each rate honest.
       const parsed = parseStaffingIssues(text, { plantId: entry.plantId, date: entry.date });
-      for (const a of parsed) {
-        if (a.laborType !== 'direct') continue;
-        if (a.type === 'planned')   dlPlanned++;
-        if (a.type === 'unplanned') dlUnplanned++;
+
+      if (hc.DL_total != null) {
+        dlDaysCounted++;
+        dlPersonDays += hc.DL_total;
+        for (const a of parsed) {
+          if (a.laborType !== 'direct') continue;
+          if (a.type === 'planned')   dlPlanned++;
+          if (a.type === 'unplanned') dlUnplanned++;
+        }
+      }
+      if (hc.IDL_total != null) {
+        idlPersonDays += hc.IDL_total;
+        for (const a of parsed) {
+          if (a.laborType !== 'indirect') continue;
+          if (a.type === 'planned')   idlPlanned++;
+          if (a.type === 'unplanned') idlUnplanned++;
+        }
       }
     }
 
-    const dlTotal = dlPlanned + dlUnplanned;
-    const pct = (n) => dlPersonDays > 0
-      ? ((n / dlPersonDays) * 100).toFixed(1) + '%'
-      : '—';
+    const dlTotal  = dlPlanned + dlUnplanned;
+    const idlTotal = idlPlanned + idlUnplanned;
+    const pct  = (n) => dlPersonDays  > 0 ? ((n / dlPersonDays)  * 100).toFixed(1) + '%' : '—';
+    const ipct = (n) => idlPersonDays > 0 ? ((n / idlPersonDays) * 100).toFixed(1) + '%' : '—';
 
     return {
-      personDays:   dlPersonDays,
-      daysCounted:  daysWithHeadcount,
+      personDays:    dlPersonDays,
+      idlPersonDays,
+      daysCounted:   dlDaysCounted,
       dlPlanned, dlUnplanned, dlTotal,
+      idlPlanned, idlUnplanned, idlTotal,
+      // DL-relative — drive the smaller Total/Planned/Unplanned cards
       totalPct:     pct(dlTotal),
       plannedPct:   pct(dlPlanned),
       unplannedPct: pct(dlUnplanned),
+      // Each labor type relative to its own person-days — DL vs IDL hero
+      dlRatePct:    pct(dlTotal),
+      idlRatePct:   ipct(idlTotal),
     };
   }, [monthlyStaffing]);
 
@@ -264,6 +283,27 @@ export function MonthlyView({ plantFilter }) {
               percentage calculations.
             </div>
           )}
+
+          {/* Direct vs Indirect Labor — headline card. Each side shows the
+              absence rate against its own workforce person-days, summed
+              across every weekday in the month that has a headcount line. */}
+          <div className={styles.dlIdlHero}>
+            <div className={styles.dlIdlHalf}>
+              <div className={styles.dlIdlPct}>{rate.dlRatePct}</div>
+              <div className={styles.dlIdlLabel}>Direct Labor</div>
+              <div className={styles.dlIdlSub}>
+                {rate.dlTotal} of {rate.personDays || '—'} DL person-days
+              </div>
+            </div>
+            <div className={styles.dlIdlDivider} aria-hidden="true" />
+            <div className={styles.dlIdlHalf}>
+              <div className={styles.dlIdlPct}>{rate.idlRatePct}</div>
+              <div className={styles.dlIdlLabel}>Indirect Labor</div>
+              <div className={styles.dlIdlSub}>
+                {rate.idlTotal} of {rate.idlPersonDays || '—'} IDL person-days
+              </div>
+            </div>
+          </div>
 
           <StatsGrid>
             <StatsCard

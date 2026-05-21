@@ -53,40 +53,49 @@ export function DailyView({ plantFilter }) {
   const rate = useMemo(() => {
     const plantsInScope = plantFilter ? [plantFilter] : PLANTS.map(p => p.id);
 
-    let dlPlanned = 0;
-    let dlUnplanned = 0;
-    let dlHeadcount = 0;
+    let dlPlanned = 0, dlUnplanned = 0, dlHeadcount = 0;
+    let idlPlanned = 0, idlUnplanned = 0, idlHeadcount = 0;
 
     for (const plantId of plantsInScope) {
       const text = staffingByPlant[plantId]?.comments;
       if (!text) continue;
 
       const hc = parseStaffingHeadcount(text);
-      // DL_total resolves to (DL_1st + DL_2nd) for EAP-style shift-split
-      // lines or to the single total for GAP/SLP-style "DL = N" lines.
-      if (hc?.DL_total != null) dlHeadcount += hc.DL_total;
+      // DL_total / IDL_total each resolve to (1st + 2nd) for shift-split
+      // lines or to the single total for "DL = N" / "IDL = N" lines.
+      if (hc?.DL_total  != null) dlHeadcount  += hc.DL_total;
+      if (hc?.IDL_total != null) idlHeadcount += hc.IDL_total;
 
       const parsed = parseStaffingIssues(text, { plantId, date: selectedDate });
       for (const a of parsed) {
-        if (a.laborType !== 'direct') continue;
-        if (a.type === 'planned')   dlPlanned++;
-        if (a.type === 'unplanned') dlUnplanned++;
+        if (a.laborType === 'direct') {
+          if (a.type === 'planned')   dlPlanned++;
+          if (a.type === 'unplanned') dlUnplanned++;
+        } else if (a.laborType === 'indirect') {
+          if (a.type === 'planned')   idlPlanned++;
+          if (a.type === 'unplanned') idlUnplanned++;
+        }
       }
     }
 
-    const dlTotal = dlPlanned + dlUnplanned;
-    const pct = (n) => dlHeadcount > 0
-      ? ((n / dlHeadcount) * 100).toFixed(1) + '%'
-      : '—';
+    const dlTotal  = dlPlanned + dlUnplanned;
+    const idlTotal = idlPlanned + idlUnplanned;
+
+    const pct  = (n) => dlHeadcount  > 0 ? ((n / dlHeadcount)  * 100).toFixed(1) + '%' : '—';
+    const ipct = (n) => idlHeadcount > 0 ? ((n / idlHeadcount) * 100).toFixed(1) + '%' : '—';
 
     return {
       headcount:    dlHeadcount,
-      dlPlanned,
-      dlUnplanned,
-      dlTotal,
+      idlHeadcount,
+      dlPlanned, dlUnplanned, dlTotal,
+      idlPlanned, idlUnplanned, idlTotal,
+      // DL-relative (used by the small Total/Planned/Unplanned cards below)
       totalPct:     pct(dlTotal),
       plannedPct:   pct(dlPlanned),
       unplannedPct: pct(dlUnplanned),
+      // Each labor type relative to its own workforce — headline DL vs IDL card
+      dlRatePct:    pct(dlTotal),
+      idlRatePct:   ipct(idlTotal),
     };
   }, [staffingByPlant, plantFilter, selectedDate]);
 
@@ -151,6 +160,27 @@ export function DailyView({ plantFilter }) {
           section updates automatically.
         </div>
       )}
+
+      {/* Direct vs Indirect Labor — headline card. Each side shows the
+          absence rate against its own workforce headcount (DL or IDL),
+          parsed from the Staffing Issues comment. */}
+      <div className={styles.dlIdlHero}>
+        <div className={styles.dlIdlHalf}>
+          <div className={styles.dlIdlPct}>{rate.dlRatePct}</div>
+          <div className={styles.dlIdlLabel}>Direct Labor</div>
+          <div className={styles.dlIdlSub}>
+            {rate.dlTotal} of {rate.headcount || '—'} DL workers
+          </div>
+        </div>
+        <div className={styles.dlIdlDivider} aria-hidden="true" />
+        <div className={styles.dlIdlHalf}>
+          <div className={styles.dlIdlPct}>{rate.idlRatePct}</div>
+          <div className={styles.dlIdlLabel}>Indirect Labor</div>
+          <div className={styles.dlIdlSub}>
+            {rate.idlTotal} of {rate.idlHeadcount || '—'} IDL workers
+          </div>
+        </div>
+      </div>
 
       <StatsGrid>
         <StatsCard
