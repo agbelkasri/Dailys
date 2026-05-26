@@ -24,16 +24,36 @@ export function DailyView({ plantFilter }) {
     [absences, plantFilter]
   );
 
+  // Single source of truth for "today's absences" — parsed directly from
+  // each in-scope plant's Staffing Issues comment. Used by both the count
+  // cards (stats) and the percentage cards (rate), so they always agree
+  // and auto-populate as the supervisor edits the comment.
+  //
+  // The /absences collection (above, via useAbsences) is kept for the
+  // editable absence table further down — that's where "Submit Absence"
+  // form entries and "Import to Absentee" results live with editable
+  // reason / duration metadata.
+  const parsedAbsences = useMemo(() => {
+    const plantsInScope = plantFilter ? [plantFilter] : PLANTS.map(p => p.id);
+    const all = [];
+    for (const plantId of plantsInScope) {
+      const text = staffingByPlant[plantId]?.comments;
+      if (!text) continue;
+      all.push(...parseStaffingIssues(text, { plantId, date: selectedDate }));
+    }
+    return all;
+  }, [staffingByPlant, plantFilter, selectedDate]);
+
   const stats = useMemo(() => {
-    const total      = filtered.length;
-    const planned    = filtered.filter(a => a.type === 'planned').length;
-    const unplanned  = filtered.filter(a => a.type === 'unplanned').length;
-    const direct     = filtered.filter(a => (a.laborType || 'direct') === 'direct').length;
-    const indirect   = filtered.filter(a => a.laborType === 'indirect').length;
-    const plants     = new Set(filtered.map(a => a.plantId)).size;
-    const totalHours = filtered.reduce((s, a) => s + (a.durationHours || 0), 0);
+    const total      = parsedAbsences.length;
+    const planned    = parsedAbsences.filter(a => a.type === 'planned').length;
+    const unplanned  = parsedAbsences.filter(a => a.type === 'unplanned').length;
+    const direct     = parsedAbsences.filter(a => a.laborType === 'direct').length;
+    const indirect   = parsedAbsences.filter(a => a.laborType === 'indirect').length;
+    const plants     = new Set(parsedAbsences.map(a => a.plantId)).size;
+    const totalHours = parsedAbsences.reduce((s, a) => s + (a.durationHours || 0), 0);
     return { total, planned, unplanned, direct, indirect, plants, totalHours };
-  }, [filtered]);
+  }, [parsedAbsences]);
 
   // ── Absenteeism % of full-time direct-labor workforce ────────────────────
   // Both numerator AND denominator come from each plant's Staffing Issues
@@ -56,25 +76,27 @@ export function DailyView({ plantFilter }) {
     let dlPlanned = 0, dlUnplanned = 0, dlHeadcount = 0;
     let idlPlanned = 0, idlUnplanned = 0, idlHeadcount = 0;
 
+    // Headcount comes from parsing the staffing comment's totals lines —
+    // parseStaffingHeadcount only needs the raw text, not the absence list.
     for (const plantId of plantsInScope) {
       const text = staffingByPlant[plantId]?.comments;
       if (!text) continue;
-
       const hc = parseStaffingHeadcount(text);
       // DL_total / IDL_total each resolve to (1st + 2nd) for shift-split
       // lines or to the single total for "DL = N" / "IDL = N" lines.
       if (hc?.DL_total  != null) dlHeadcount  += hc.DL_total;
       if (hc?.IDL_total != null) idlHeadcount += hc.IDL_total;
+    }
 
-      const parsed = parseStaffingIssues(text, { plantId, date: selectedDate });
-      for (const a of parsed) {
-        if (a.laborType === 'direct') {
-          if (a.type === 'planned')   dlPlanned++;
-          if (a.type === 'unplanned') dlUnplanned++;
-        } else if (a.laborType === 'indirect') {
-          if (a.type === 'planned')   idlPlanned++;
-          if (a.type === 'unplanned') idlUnplanned++;
-        }
+    // Absences come from the shared parsedAbsences memo so the count
+    // cards and percentage cards stay in lockstep.
+    for (const a of parsedAbsences) {
+      if (a.laborType === 'direct') {
+        if (a.type === 'planned')   dlPlanned++;
+        if (a.type === 'unplanned') dlUnplanned++;
+      } else if (a.laborType === 'indirect') {
+        if (a.type === 'planned')   idlPlanned++;
+        if (a.type === 'unplanned') idlUnplanned++;
       }
     }
 
@@ -97,7 +119,7 @@ export function DailyView({ plantFilter }) {
       dlRatePct:    pct(dlTotal),
       idlRatePct:   ipct(idlTotal),
     };
-  }, [staffingByPlant, plantFilter, selectedDate]);
+  }, [staffingByPlant, parsedAbsences, plantFilter]);
 
   const scopeLabel = plantFilter ? plantFilter : 'all plants';
 
