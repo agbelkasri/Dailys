@@ -33,9 +33,14 @@
 }
 
 /* Calendar heatmap — wrapper takes the full container width so the
-   ResizeObserver inside the component can size the canvas to fill it. */
+   ResizeObserver can read it, but the canvas inside is capped at a
+   sensible size (see maxCell in CalendarHeatmap.jsx) and centered so
+   it matches the visual weight of an adjacent donut card. */
 .heatmapWrap {
   width: 100%;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
 }
 
 .heatmapLegend {

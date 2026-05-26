@@ -48,12 +48,13 @@ export function CalendarHeatmap({ byDay, year, month }) {
     if (!canvas || width === 0) return;
 
     // Grid geometry — gap and labelW are constant; cellSize scales with
-    // the container so the whole calendar fills the available width.
+    // the container, capped so the calendar's visual weight matches the
+    // adjacent donut card (~180px diameter) instead of overwhelming it.
     const gap     = 6;
     const labelW  = 24;
     const cols    = 7;
-    const minCell = 30;
-    const maxCell = 96;
+    const minCell = 28;
+    const maxCell = 42;
 
     // Container width minus the row-label gutter (currently unused for
     // labels but reserved so the grid doesn't kiss the left edge), with
