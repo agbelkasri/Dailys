@@ -32,7 +32,12 @@
   flex-shrink: 0;
 }
 
-/* Calendar heatmap legend */
+/* Calendar heatmap — wrapper takes the full container width so the
+   ResizeObserver inside the component can size the canvas to fill it. */
+.heatmapWrap {
+  width: 100%;
+}
+
 .heatmapLegend {
   display: flex;
   align-items: center;
