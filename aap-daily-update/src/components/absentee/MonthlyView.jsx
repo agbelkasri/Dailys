@@ -336,26 +336,16 @@ export function MonthlyView({ plantFilter }) {
             <StatsCard label="Top Reason"     value={data.topReason} accent="#ec4899" />
           </StatsGrid>
 
-          {/* Calendar */}
-          <div className={styles.chartCard}>
-            <div className={styles.cardHeader}>Absence Calendar</div>
-            <div className={styles.cardBody}>
-              <CalendarHeatmap byDay={data.byDay} year={year} month={month} />
-            </div>
-          </div>
-
-          {/* Two-column charts */}
+          {/* Calendar now sits in the slot where Planned vs Unplanned
+              used to live — same half-width chartGrid as By Plant.
+              At ~half the container it naturally renders around 60-70px
+              cells, which is more proportional than the full-width
+              version. */}
           <div className={styles.chartGrid}>
             <div className={styles.chartCard}>
-              <div className={styles.cardHeader}>Planned vs Unplanned</div>
+              <div className={styles.cardHeader}>Absence Calendar</div>
               <div className={styles.cardBody}>
-                <DonutChart
-                  segments={[
-                    { label: 'Planned',   value: data.planned,   color: '#2563eb' },
-                    { label: 'Unplanned', value: data.unplanned, color: '#ef4444' },
-                  ]}
-                  centerText={String(data.total)}
-                />
+                <CalendarHeatmap byDay={data.byDay} year={year} month={month} />
               </div>
             </div>
 
