@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { PLANTS, ABSENCE_TYPES, LABOR_TYPES, SHIFTS, DURATIONS, ABSENCE_REASONS, EMPLOYMENT_TYPES, ABSENCE_TERMS, getHoursForDuration } from '../../constants/absences';
+import { PLANTS, ABSENCE_TYPES, LABOR_TYPES, SHIFTS, DURATIONS, EMPLOYMENT_TYPES, getHoursForDuration } from '../../constants/absences';
 import { addAbsence } from '../../services/absenceService';
 import { getTodayDate } from '../../hooks/useDateNavigation';
 import styles from './SubmitView.module.css';
@@ -51,7 +51,7 @@ export function SubmitView({ onSuccess, prefill = null }) {
     setSubmitting(true);
 
     try {
-      const { customHours, ...rest } = form;
+      const { customHours: _customHours, ...rest } = form;
       await addAbsence({ ...rest });
       setForm(EMPTY_FORM);
       onSuccess?.();
@@ -118,15 +118,27 @@ export function SubmitView({ onSuccess, prefill = null }) {
             </div>
           </div>
           <div className={styles.group}>
-            <label className={styles.label}>Absence Term *</label>
-            <div className={styles.radioGroup}>
-              {ABSENCE_TERMS.map(t => (
-                <label key={t.value} className={styles.radio}>
-                  <input type="radio" name="absenceTerm" value={t.value} checked={form.absenceTerm === t.value} onChange={handleChange} />
-                  {t.label}
-                </label>
-              ))}
-            </div>
+            <label className={styles.label}>Duration *</label>
+            <select className={styles.select} name="duration" value={form.duration} onChange={handleChange}>
+              {DURATIONS.map(d => <option key={d.value} value={d.value}>{d.label}</option>)}
+            </select>
+            {form.duration === 'custom' && (
+              <div className={styles.customHours}>
+                <input
+                  className={styles.input}
+                  type="number"
+                  name="customHours"
+                  value={form.customHours}
+                  onChange={handleChange}
+                  placeholder="0"
+                  min="0.5"
+                  max="12"
+                  step="0.5"
+                  style={{ marginTop: 6 }}
+                />
+                <span className={styles.hoursLabel}>hours</span>
+              </div>
+            )}
           </div>
         </div>
 
@@ -152,38 +164,6 @@ export function SubmitView({ onSuccess, prefill = null }) {
                 </label>
               ))}
             </div>
-          </div>
-        </div>
-
-        <div className={styles.row}>
-          <div className={styles.group}>
-            <label className={styles.label}>Reason *</label>
-            <select className={styles.select} name="reason" value={form.reason} onChange={handleChange}>
-              {ABSENCE_REASONS.map(r => <option key={r.value} value={r.value}>{r.label}</option>)}
-            </select>
-          </div>
-          <div className={styles.group}>
-            <label className={styles.label}>Duration *</label>
-            <select className={styles.select} name="duration" value={form.duration} onChange={handleChange}>
-              {DURATIONS.map(d => <option key={d.value} value={d.value}>{d.label}</option>)}
-            </select>
-            {form.duration === 'custom' && (
-              <div className={styles.customHours}>
-                <input
-                  className={styles.input}
-                  type="number"
-                  name="customHours"
-                  value={form.customHours}
-                  onChange={handleChange}
-                  placeholder="0"
-                  min="0.5"
-                  max="12"
-                  step="0.5"
-                  style={{ marginTop: 6 }}
-                />
-                <span className={styles.hoursLabel}>hours</span>
-              </div>
-            )}
           </div>
         </div>
 

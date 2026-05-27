@@ -2,7 +2,7 @@ import { useState, useMemo } from 'react';
 import { format, addMonths, subMonths } from 'date-fns';
 import { useMonthlyAbsences } from '../../hooks/useMonthlyAbsences';
 import { useMonthlyStaffing } from '../../hooks/useMonthlyStaffing';
-import { PLANTS, REASON_LABELS } from '../../constants/absences';
+import { PLANTS } from '../../constants/absences';
 import { parseStaffingIssues, parseStaffingHeadcount } from '../../utils/parseStaffingIssues';
 import { StatsCard, StatsGrid } from './StatsCard';
 import { CalendarHeatmap } from './charts/CalendarHeatmap';
@@ -13,13 +13,6 @@ import { DayOfWeekChart } from './charts/DayOfWeekChart';
 import styles from './MonthlyView.module.css';
 
 const PLANT_MAP = Object.fromEntries(PLANTS.map(p => [p.id, p.name]));
-
-const REASON_COLORS = {
-  vacation: '#2563eb', sick: '#ef4444', personal: '#f59e0b',
-  family_emergency: '#8b5cf6', jury_duty: '#06b6d4',
-  bereavement: '#64748b', fmla: '#ec4899', work_injury: '#dc2626',
-  no_call_no_show: '#92400e', other: '#94a3b8',
-};
 
 function getWorkingDays(year, month) {
   const daysInMonth = new Date(year, month + 1, 0).getDate();
@@ -78,13 +71,6 @@ export function MonthlyView({ plantFilter }) {
     byDay.forEach((cnt, d) => { if (cnt > peakCount) { peakDay = d; peakCount = cnt; } });
     const peakLabel = peakCount > 0 ? `${format(new Date(peakDay + 'T12:00:00'), 'MMM d')} (${peakCount})` : '-';
 
-    // By reason
-    const bReason = {};
-    absences.forEach(a => { bReason[a.reason] = (bReason[a.reason] || 0) + 1; });
-    let topReason = '-';
-    let topCount  = 0;
-    Object.entries(bReason).forEach(([r, c]) => { if (c > topCount) { topReason = r; topCount = c; } });
-
     // Month-over-month
     const prevTotal = (plantFilter ? prevAbsences.filter(a => a.plantId === plantFilter) : prevAbsences).length;
     let momLabel = '-';
@@ -139,13 +125,6 @@ export function MonthlyView({ plantFilter }) {
       .sort((a, b) => b[1] - a[1])
       .slice(0, 5);
 
-    // Reason segments for donut
-    const reasonSegments = Object.entries(bReason).map(([r, c]) => ({
-      label: REASON_LABELS[r] || r,
-      value: c,
-      color: REASON_COLORS[r] || '#94a3b8',
-    }));
-
     // Plant segments for donut
     const plantSegments = PLANTS
       .filter(p => byPlant[p.id])
@@ -158,9 +137,8 @@ export function MonthlyView({ plantFilter }) {
     return {
       total, planned, unplanned, direct, indirect, shift1, shift2,
       avgPerDay, totalHours, peakLabel, momLabel,
-      topReason: REASON_LABELS[topReason] || topReason,
       byDay, dowCounts, dailyBars, topAbsentees,
-      reasonSegments, plantSegments,
+      plantSegments,
     };
   }, [absences, prevAbsences, year, month, plantFilter]);
 
@@ -333,7 +311,6 @@ export function MonthlyView({ plantFilter }) {
             <StatsCard label="2nd Shift"      value={data.shift2}    accent="#7c3aed" />
             <StatsCard label="Avg / Work Day" value={data.avgPerDay} accent="#64748b" />
             <StatsCard label="Peak Day"       value={data.peakLabel} accent="#f59e0b" />
-            <StatsCard label="Top Reason"     value={data.topReason} accent="#ec4899" />
           </StatsGrid>
 
           {/* Calendar now sits in the slot where Planned vs Unplanned
@@ -382,14 +359,6 @@ export function MonthlyView({ plantFilter }) {
                   centerText={String(data.total)}
                 />
               </div>
-            </div>
-          </div>
-
-          {/* By reason donut */}
-          <div className={styles.chartCard}>
-            <div className={styles.cardHeader}>By Reason</div>
-            <div className={styles.cardBody}>
-              <DonutChart segments={data.reasonSegments} centerText={String(data.total)} />
             </div>
           </div>
 

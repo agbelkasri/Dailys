@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { PLANTS, REASON_LABELS, DURATION_LABELS } from '../../constants/absences';
+import { PLANTS, DURATION_LABELS } from '../../constants/absences';
 import styles from './AbsenceTable.module.css';
 
 const PLANT_MAP = Object.fromEntries(PLANTS.map(p => [p.id, p.name]));
@@ -10,7 +10,6 @@ const COLUMNS = [
   { key: 'type',         label: 'Type' },
   { key: 'laborType',    label: 'Labor' },
   { key: 'shift',        label: 'Shift' },
-  { key: 'reason',       label: 'Reason' },
   { key: 'duration',     label: 'Duration' },
 ];
 
@@ -85,7 +84,6 @@ export function AbsenceTable({ absences, onEdit, onDelete, readOnly = false }) {
                   </span>
                 </td>
                 <td className={styles.td}>{a.shift}</td>
-                <td className={styles.td}>{REASON_LABELS[a.reason] || a.reason}</td>
                 <td className={styles.td}>
                   {DURATION_LABELS[a.duration] || a.duration}
                   {a.duration === 'custom' ? ` (${a.durationHours}h)` : ''}
