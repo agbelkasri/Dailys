@@ -10,6 +10,7 @@ import { Header } from './components/layout/Header';
 import { DailyReport } from './components/report/DailyReport';
 import { AbsenteeReport } from './components/absentee/AbsenteeReport';
 import { TurnoverReport } from './components/turnover/TurnoverReport';
+import { HistoricalImport } from './components/admin/HistoricalImport';
 import { exportToExcel, printReport } from './services/exportService';
 import { submitChangeRequest } from './services/reportService';
 import { auth } from './firebase';
@@ -116,7 +117,8 @@ function PlantDailyTab({ plantId, user, activeTab, onTabChange, onLogout, isDark
   );
 }
 
-const VALID_TABS = ['EAP', 'GAP', 'SLP', 'absentee', 'turnover'];
+const VALID_TABS = ['EAP', 'GAP', 'SLP', 'absentee', 'turnover', 'import'];
+const ADMIN_ONLY_TABS = ['turnover', 'import'];
 
 function getInitialTab() {
   const hash = window.location.hash.replace('#', '');
@@ -128,11 +130,11 @@ function AppContent({ user, logout }) {
   const { isDark, toggle: toggleDark } = useDarkMode();
   const [activeTab, setActiveTab] = useState(getInitialTab);
 
-  // If a non-admin lands on the turnover tab (e.g. via URL hash), redirect to GAP
-  const safeTab = (activeTab === 'turnover' && !isAdmin) ? 'GAP' : activeTab;
+  // If a non-admin lands on an admin-only tab (e.g. via URL hash), redirect to GAP
+  const safeTab = (ADMIN_ONLY_TABS.includes(activeTab) && !isAdmin) ? 'GAP' : activeTab;
 
   function handleTabChange(tab) {
-    if (tab === 'turnover' && !isAdmin) return;
+    if (ADMIN_ONLY_TABS.includes(tab) && !isAdmin) return;
     setActiveTab(tab);
     window.location.hash = tab;
   }
@@ -147,7 +149,8 @@ function AppContent({ user, logout }) {
     }
   }, [safeTab]);
 
-  if (safeTab !== 'absentee' && safeTab !== 'turnover') {
+  const isNonDaily = ['absentee', 'turnover', 'import'].includes(safeTab);
+  if (!isNonDaily) {
     return (
       <PlantDailyTab
         plantId={safeTab}
@@ -174,6 +177,7 @@ function AppContent({ user, logout }) {
       <main>
         {safeTab === 'absentee' && <AbsenteeReport user={user} />}
         {safeTab === 'turnover' && <TurnoverReport user={user} />}
+        {safeTab === 'import'   && <HistoricalImport />}
       </main>
     </>
   );

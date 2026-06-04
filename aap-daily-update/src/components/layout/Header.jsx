@@ -38,6 +38,7 @@ const BASE_TABS = [
 
 const ADMIN_TABS = [
   { id: 'turnover', label: 'Turnover' },
+  { id: 'import',   label: 'Import'   },
 ];
 
 export function Header({
@@ -62,8 +63,9 @@ export function Header({
   const menuRef = useRef(null);
   const isAdmin = useIsAdmin(user);
   const TABS = isAdmin ? [...BASE_TABS, ...ADMIN_TABS] : BASE_TABS;
-  const isDaily = activeTab !== 'absentee' && activeTab !== 'turnover';
-  const logoLabel = (activeTab === 'absentee' || activeTab === 'turnover') ? 'AAP' : activeTab;
+  const NON_DAILY = ['absentee', 'turnover', 'import'];
+  const isDaily = !NON_DAILY.includes(activeTab);
+  const logoLabel = NON_DAILY.includes(activeTab) ? 'AAP' : activeTab;
 
   // Close dropdown when clicking/touching outside
   useEffect(() => {
