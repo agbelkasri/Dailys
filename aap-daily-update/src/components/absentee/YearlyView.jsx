@@ -19,7 +19,10 @@ export function YearlyView({ plantFilter }) {
   const { byKey: yearStaffing, loading, endDate } =
     useYearlyStaffing(year, plantFilter);
 
-  // ── Aggregate across the year (person-days) ──────────────────────────────
+  // ── Aggregate scheduled shifts across the year ────────────────────────────
+  // For each weekday with a headcount line, the DL/IDL roster count contributes
+  // that many "scheduled shifts" (one worker × one shift per day). Absences
+  // are subtracted from those scheduled shifts to get the unfulfilled count.
   const rate = useMemo(() => {
     let dlPlanned = 0, dlUnplanned = 0, dlPersonDays = 0, dlDaysCounted = 0;
     let idlPlanned = 0, idlUnplanned = 0, idlPersonDays = 0;
@@ -143,8 +146,8 @@ export function YearlyView({ plantFilter }) {
             <div className={styles.rateHeaderText}>
               Year-to-date absenteeism rate — {scopeLabel}
               <span className={styles.rateDenominator}>
-                {' '}({rate.dlTotal} of {rate.personDays || '—'} DL person-days
-                across {rate.daysCounted} day{rate.daysCounted !== 1 ? 's' : ''})
+                {' '}({rate.dlTotal} unfulfilled of {rate.personDays || '—'} scheduled
+                FT DL shifts across {rate.daysCounted} day{rate.daysCounted !== 1 ? 's' : ''})
               </span>
             </div>
           </div>
@@ -155,7 +158,7 @@ export function YearlyView({ plantFilter }) {
               <div className={styles.dlIdlPct}>{rate.dlRatePct}</div>
               <div className={styles.dlIdlLabel}>Direct Labor</div>
               <div className={styles.dlIdlSub}>
-                {rate.dlTotal} of {rate.personDays || '—'} DL person-days
+                {rate.dlTotal} unfulfilled of {rate.personDays || '—'} DL shifts
               </div>
             </div>
             <div className={styles.dlIdlDivider} aria-hidden="true" />
@@ -163,7 +166,7 @@ export function YearlyView({ plantFilter }) {
               <div className={styles.dlIdlPct}>{rate.idlRatePct}</div>
               <div className={styles.dlIdlLabel}>Indirect Labor</div>
               <div className={styles.dlIdlSub}>
-                {rate.idlTotal} of {rate.idlPersonDays || '—'} IDL person-days
+                {rate.idlTotal} unfulfilled of {rate.idlPersonDays || '—'} IDL shifts
               </div>
             </div>
           </div>
@@ -173,19 +176,19 @@ export function YearlyView({ plantFilter }) {
             <StatsCard
               label="Total Absenteeism %"
               value={rate.totalPct}
-              sub={`${rate.dlTotal} of ${rate.personDays || '—'} person-days`}
+              sub={`${rate.dlTotal} unfulfilled of ${rate.personDays || '—'} shifts`}
               accent="#1a3a5c"
             />
             <StatsCard
               label="Planned %"
               value={rate.plannedPct}
-              sub={`${rate.dlPlanned} of ${rate.personDays || '—'} person-days`}
+              sub={`${rate.dlPlanned} of ${rate.personDays || '—'} shifts`}
               accent="#2563eb"
             />
             <StatsCard
               label="Unplanned %"
               value={rate.unplannedPct}
-              sub={`${rate.dlUnplanned} of ${rate.personDays || '—'} person-days`}
+              sub={`${rate.dlUnplanned} of ${rate.personDays || '—'} shifts`}
               accent="#dc2626"
             />
           </StatsGrid>

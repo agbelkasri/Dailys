@@ -235,15 +235,16 @@ export function MonthlyView({ plantFilter }) {
       ) : (
         <>
           {/* Workforce-% — same formula as Daily View, summed across the
-              month as person-days. Hidden while monthly staffing snapshots
-              are loading so we don't flash the "—" placeholders. */}
+              month as scheduled shifts (one shift per worker per weekday
+              that had a headcount line). Hidden while monthly staffing
+              snapshots are loading so we don't flash the "—" placeholders. */}
           <div className={styles.rateHeader}>
             <div className={styles.rateHeaderText}>
               Monthly absenteeism rate — {plantFilter || 'all plants'}
               {rate.personDays > 0 && (
                 <span className={styles.rateDenominator}>
-                  {' '}({rate.dlTotal} of {rate.personDays} FT DL person-days
-                  across {rate.daysCounted} day{rate.daysCounted !== 1 ? 's' : ''})
+                  {' '}({rate.dlTotal} unfulfilled of {rate.personDays} scheduled
+                  FT DL shifts across {rate.daysCounted} day{rate.daysCounted !== 1 ? 's' : ''})
                 </span>
               )}
             </div>
@@ -254,19 +255,20 @@ export function MonthlyView({ plantFilter }) {
               No headcount lines found in this month's Staffing Issues
               comments. Add a line like <code>DL = 1st - 26, 2nd - 11</code>
               (or <code>DL = 23</code>) to the daily comments to enable
-              percentage calculations.
+              shift calculations.
             </div>
           )}
 
           {/* Direct vs Indirect Labor — headline card. Each side shows the
-              absence rate against its own workforce person-days, summed
-              across every weekday in the month that has a headcount line. */}
+              unfulfilled-shift rate against its own workforce — sum of
+              scheduled shifts across every weekday in the month that has
+              a headcount line. */}
           <div className={styles.dlIdlHero}>
             <div className={styles.dlIdlHalf}>
               <div className={styles.dlIdlPct}>{rate.dlRatePct}</div>
               <div className={styles.dlIdlLabel}>Direct Labor</div>
               <div className={styles.dlIdlSub}>
-                {rate.dlTotal} of {rate.personDays || '—'} DL person-days
+                {rate.dlTotal} unfulfilled of {rate.personDays || '—'} DL shifts
               </div>
             </div>
             <div className={styles.dlIdlDivider} aria-hidden="true" />
@@ -274,7 +276,7 @@ export function MonthlyView({ plantFilter }) {
               <div className={styles.dlIdlPct}>{rate.idlRatePct}</div>
               <div className={styles.dlIdlLabel}>Indirect Labor</div>
               <div className={styles.dlIdlSub}>
-                {rate.idlTotal} of {rate.idlPersonDays || '—'} IDL person-days
+                {rate.idlTotal} unfulfilled of {rate.idlPersonDays || '—'} IDL shifts
               </div>
             </div>
           </div>
@@ -283,19 +285,19 @@ export function MonthlyView({ plantFilter }) {
             <StatsCard
               label="Total Absenteeism %"
               value={rate.totalPct}
-              sub={`${rate.dlTotal} of ${rate.personDays || '—'} person-days`}
+              sub={`${rate.dlTotal} unfulfilled of ${rate.personDays || '—'} shifts`}
               accent="#1a3a5c"
             />
             <StatsCard
               label="Planned %"
               value={rate.plannedPct}
-              sub={`${rate.dlPlanned} of ${rate.personDays || '—'} person-days`}
+              sub={`${rate.dlPlanned} of ${rate.personDays || '—'} shifts`}
               accent="#2563eb"
             />
             <StatsCard
               label="Unplanned %"
               value={rate.unplannedPct}
-              sub={`${rate.dlUnplanned} of ${rate.personDays || '—'} person-days`}
+              sub={`${rate.dlUnplanned} of ${rate.personDays || '—'} shifts`}
               accent="#dc2626"
             />
           </StatsGrid>
