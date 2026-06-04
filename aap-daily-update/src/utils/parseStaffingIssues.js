@@ -169,48 +169,60 @@ export function parseStaffingIssues(text, { plantId, date }) {
 }
 
 /**
- * Headcount lines come in two shapes:
+ * Headcount lines come in three shapes, in priority order:
  *
- *   1. Shift-split (EAP convention)
- *        DL =  1st - 26,  2nd - 11
+ *   1. Colon-total (EAP / GAP roster line — preferred)
+ *        DL: 39                          ← "Total Employees minus LOA"
+ *        IDL: 22
+ *
+ *   2. Shift-split (EAP "Total Present" line — fallback)
+ *        DL =  1st - 26,  2nd - 11       ← roster minus today's absentees
  *        IDL = 1st - 5,   2nd - 2
  *
- *   2. Total-only (GAP / SLP convention)
+ *   3. Total-only with equals (GAP / SLP plain format — fallback)
  *        DL = 23
  *        IDL = 9
  *
- * The `=` sign is the disambiguator: in real comments, `=` denotes the
- * "Total Present" / "Active Staff" workforce we want as the denominator,
- * while `:` denotes other variants we don't want ("Total Employees minus
- * LOA", labor lines, etc.). So total-only matching is gated on `=`.
+ * The colon line wins when present because it's the stable workforce
+ * roster (Total Employees minus LOA). The `=` lines represent "Total
+ * Present" — roster minus today's absent — which would silently shrink
+ * the denominator on days with many absentees, inflating the %. A
+ * 30-weekday backtest confirmed `:` ≥ `=` on every day where both were
+ * present, exactly what we'd expect with this interpretation.
+ *
+ * SLP doesn't write a colon line, so it falls through to the equals
+ * line. For SLP that line IS the roster (no separate Total Present),
+ * so the fallback is correct there too.
  */
 const DL_SHIFT_RE  = /\bDL\b[^a-zA-Z\d]{0,8}1st[^a-zA-Z\d]{0,4}(\d+)[^a-zA-Z\d]{1,8}2nd[^a-zA-Z\d]{0,4}(\d+)/i;
 const IDL_SHIFT_RE = /\bIDL\b[^a-zA-Z\d]{0,8}1st[^a-zA-Z\d]{0,4}(\d+)[^a-zA-Z\d]{1,8}2nd[^a-zA-Z\d]{0,4}(\d+)/i;
 
-// Total-only — DL/IDL followed by `=` then a number that's NOT the start
-// of a "1st" / "2nd" shift designator. Negative lookahead prevents
-// matching "DL = 1st - 26, 2nd - 11" with the leading "1" as a total.
-// Allowing only `=` (not `:`) ensures lines like "DL: 39 (1st -27 - 2nd 12)"
-// from the "Total Employees minus LOA" block don't compete.
-const DL_TOTAL_RE  = /\bDL\b\s*=\s*(\d+)\b(?!\s*(?:st|nd)\b)/i;
-const IDL_TOTAL_RE = /\bIDL\b\s*=\s*(\d+)\b(?!\s*(?:st|nd)\b)/i;
+// Colon-total — preferred. Matches "DL: 39" / "IDL: 22". Negative
+// lookahead prevents matching absentee lines like "DL: 1st shift: Nate"
+// (where "1" is a digit but the lookahead sees "st" right after).
+const DL_COLON_RE  = /\bDL\b\s*:\s*(\d+)\b(?!\s*(?:st|nd)\b)/i;
+const IDL_COLON_RE = /\bIDL\b\s*:\s*(\d+)\b(?!\s*(?:st|nd)\b)/i;
+
+// Equals-total — fallback. Matches "DL = 23" / "IDL = 9".
+const DL_EQ_RE     = /\bDL\b\s*=\s*(\d+)\b(?!\s*(?:st|nd)\b)/i;
+const IDL_EQ_RE    = /\bIDL\b\s*=\s*(\d+)\b(?!\s*(?:st|nd)\b)/i;
 
 /** Combined predicate for "this line is a headcount totals line" — used
  *  by parseStaffingIssues() to skip it during absence parsing. */
 function isHeadcountLine(line) {
   return DL_SHIFT_RE.test(line)
       || IDL_SHIFT_RE.test(line)
-      || DL_TOTAL_RE.test(line)
-      || IDL_TOTAL_RE.test(line);
+      || DL_COLON_RE.test(line)
+      || IDL_COLON_RE.test(line)
+      || DL_EQ_RE.test(line)
+      || IDL_EQ_RE.test(line);
 }
 
 /**
  * Extracts plant headcount from a Staffing Issues comment. Returns the
- * resolved total per labor type (DL / IDL), preferring a shift-split
- * line when present and falling back to a total-only line otherwise.
- * When the same line appears multiple times across the comment (e.g.
- * "Total Employees" and "Total Present"), the LAST match wins — which
- * is "Total Present" in practice since it appears later in the document.
+ * resolved total per labor type (DL / IDL), preferring the colon-total
+ * roster line, falling back to shift-split or equals-total when the
+ * colon line isn't present.
  *
  * Shape:
  *   {
@@ -220,46 +232,50 @@ function isHeadcountLine(line) {
  *     IDL_total,
  *   }
  *
- * Returns null when no headcount line of either shape is found.
+ * Returns null when no headcount line of any shape is found.
  */
 export function parseStaffingHeadcount(text) {
   if (!text) return null;
   const plainText = stripHtml(text);
   const lines = plainText.split(/\r?\n/).map(l => l.trim()).filter(Boolean);
 
-  let DL_1st = null, DL_2nd = null, DL_totalOnly = null;
-  let IDL_1st = null, IDL_2nd = null, IDL_totalOnly = null;
+  let DL_colon = null, DL_1st = null, DL_2nd = null, DL_eq = null;
+  let IDL_colon = null, IDL_1st = null, IDL_2nd = null, IDL_eq = null;
 
   for (const line of lines) {
-    // ── DL ──────────────────────────────────────────────────────────────
+    let m;
+    m = line.match(DL_COLON_RE);  if (m) DL_colon = parseInt(m[1], 10);
+    m = line.match(IDL_COLON_RE); if (m) IDL_colon = parseInt(m[1], 10);
+    // ── DL equals/shift ─────────────────────────────────────────────────
     const dlShift = line.match(DL_SHIFT_RE);
     if (dlShift) {
       DL_1st = parseInt(dlShift[1], 10);
       DL_2nd = parseInt(dlShift[2], 10);
     } else {
-      const dlT = line.match(DL_TOTAL_RE);
-      if (dlT) DL_totalOnly = parseInt(dlT[1], 10);
+      const dlT = line.match(DL_EQ_RE);
+      if (dlT) DL_eq = parseInt(dlT[1], 10);
     }
 
-    // ── IDL ─────────────────────────────────────────────────────────────
+    // ── IDL equals/shift ────────────────────────────────────────────────
     const idlShift = line.match(IDL_SHIFT_RE);
     if (idlShift) {
       IDL_1st = parseInt(idlShift[1], 10);
       IDL_2nd = parseInt(idlShift[2], 10);
     } else {
-      const idlT = line.match(IDL_TOTAL_RE);
-      if (idlT) IDL_totalOnly = parseInt(idlT[1], 10);
+      const idlT = line.match(IDL_EQ_RE);
+      if (idlT) IDL_eq = parseInt(idlT[1], 10);
     }
   }
 
-  const DL_total = (DL_1st !== null && DL_2nd !== null)
-    ? DL_1st + DL_2nd
-    : DL_totalOnly;
-  const IDL_total = (IDL_1st !== null && IDL_2nd !== null)
-    ? IDL_1st + IDL_2nd
-    : IDL_totalOnly;
+  // Resolve with priority: colon (roster) > shift-sum > equals-total.
+  // Colon wins because that line is explicitly "Total Employees minus LOA";
+  // the equals/shift lines are "Total Present" which subtracts today's
+  // absentees, shrinking the denominator and inflating the %.
+  const shiftSum = (n1, n2) => (n1 != null && n2 != null) ? n1 + n2 : null;
+  const DL_total  = DL_colon  ?? shiftSum(DL_1st,  DL_2nd)  ?? DL_eq;
+  const IDL_total = IDL_colon ?? shiftSum(IDL_1st, IDL_2nd) ?? IDL_eq;
 
-  if (DL_total === null && IDL_total === null) return null;
+  if (DL_total == null && IDL_total == null) return null;
 
   return { DL_1st, DL_2nd, IDL_1st, IDL_2nd, DL_total, IDL_total };
 }
