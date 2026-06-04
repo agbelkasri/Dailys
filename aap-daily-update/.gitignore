@@ -21,6 +21,11 @@ dist-ssr
 # Explicitly track weekly Excel backups (do NOT add backups/ here)
 !backups/
 
+# Historical Excel files staged for one-time import — not committed.
+# Drop your .xlsx files in scripts/historical/ then run
+#   node scripts/importHistorical.js --dry-run
+scripts/historical/
+
 # Editor directories and files
 .vscode/*
 !.vscode/extensions.json
