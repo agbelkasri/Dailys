@@ -73,25 +73,6 @@ export function DailyReport({
 
   return (
     <div className={styles.wrapper}>
-      {/* Admin holiday toggle — marking a day closed hides it from
-          non-admins and removes it from every absenteeism calculation. */}
-      {canToggleHoliday && (
-        <label className={isHolidayDay ? styles.holidayToggleActive : styles.holidayToggle}>
-          <input
-            type="checkbox"
-            checked={isHolidayDay}
-            disabled={holidayToggleBusy}
-            onChange={(e) => onToggleHoliday?.(e.target.checked)}
-          />
-          <span className={styles.holidayToggleLabel}>Plant closed (holiday)</span>
-          {isHolidayDay && (
-            <span className={styles.holidayToggleNote}>
-              Hidden from non-admins · excluded from absentee stats
-            </span>
-          )}
-        </label>
-      )}
-
       {canRequestEdit && readOnly && (
         <div className={styles.readOnlyBanner}>
           <span>Viewing historical report — read only</span>
@@ -166,6 +147,25 @@ export function DailyReport({
           <ReportSectionCard {...sharedProps(sectionDef)} />
         ))}
       </div>
+
+      {/* Admin holiday toggle — marking a day closed hides it from
+          non-admins and removes it from every absenteeism calculation. */}
+      {canToggleHoliday && (
+        <label className={isHolidayDay ? styles.holidayToggleActive : styles.holidayToggle}>
+          <input
+            type="checkbox"
+            checked={isHolidayDay}
+            disabled={holidayToggleBusy}
+            onChange={(e) => onToggleHoliday?.(e.target.checked)}
+          />
+          <span className={styles.holidayToggleLabel}>Plant closed (holiday)</span>
+          {isHolidayDay && (
+            <span className={styles.holidayToggleNote}>
+              Hidden from non-admins · excluded from absentee stats
+            </span>
+          )}
+        </label>
+      )}
     </div>
   );
 }
