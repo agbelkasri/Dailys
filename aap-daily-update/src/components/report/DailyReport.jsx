@@ -9,6 +9,10 @@ export function DailyReport({
   // read-only banner if the parent doesn't pass them, e.g. a print view)
   canRequestEdit = false, editRequested = false, submitState = 'idle',
   onRequestEdit, onSubmitChanges, onCancelEdit,
+  // Holiday controls — admins get a toggle; non-admins see a closed state
+  // when the day is a holiday and never see the report content.
+  isHolidayDay = false, canToggleHoliday = false, onToggleHoliday,
+  holidayToggleBusy = false,
 }) {
   const sectionDefs = getSectionsForPlant(plantId);
 
@@ -54,8 +58,40 @@ export function DailyReport({
   const submitting = submitState === 'submitting';
   const submitFailed = submitState === 'error';
 
+  // Non-admin viewing a holiday: show only a "closed" card, never the report.
+  if (isHolidayDay && !canToggleHoliday) {
+    return (
+      <div className={styles.wrapper}>
+        <div className={styles.holidayClosed}>
+          <div className={styles.holidayIcon}>🏖️</div>
+          <div className={styles.holidayTitle}>Plant closed — holiday</div>
+          <div className={styles.holidaySub}>No daily report for this date.</div>
+        </div>
+      </div>
+    );
+  }
+
   return (
     <div className={styles.wrapper}>
+      {/* Admin holiday toggle — marking a day closed hides it from
+          non-admins and removes it from every absenteeism calculation. */}
+      {canToggleHoliday && (
+        <label className={isHolidayDay ? styles.holidayToggleActive : styles.holidayToggle}>
+          <input
+            type="checkbox"
+            checked={isHolidayDay}
+            disabled={holidayToggleBusy}
+            onChange={(e) => onToggleHoliday?.(e.target.checked)}
+          />
+          <span className={styles.holidayToggleLabel}>Plant closed (holiday)</span>
+          {isHolidayDay && (
+            <span className={styles.holidayToggleNote}>
+              Hidden from non-admins · excluded from absentee stats
+            </span>
+          )}
+        </label>
+      )}
+
       {canRequestEdit && readOnly && (
         <div className={styles.readOnlyBanner}>
           <span>Viewing historical report — read only</span>

@@ -3,6 +3,8 @@ import { format, parseISO } from 'date-fns';
 import { getTodayDate, prevWeekday, nextWeekday } from '../../hooks/useDateNavigation';
 import { useAbsences } from '../../hooks/useAbsences';
 import { useStaffingByPlant } from '../../hooks/useStaffingByPlant';
+import { useHolidays } from '../../hooks/useHolidays';
+import { isHoliday } from '../../utils/holidays';
 import { deleteAbsence } from '../../services/absenceService';
 import { PLANTS } from '../../constants/absences';
 import { parseStaffingIssues, parseStaffingHeadcount } from '../../utils/parseStaffingIssues';
@@ -18,6 +20,7 @@ export function DailyView({ plantFilter }) {
   const { absences, loading, error }              = useAbsences(selectedDate);
   const { byPlant: staffingByPlant,
           loading: staffingLoading }              = useStaffingByPlant(selectedDate, plantFilter);
+  const holidays = useHolidays();
 
   const filtered = useMemo(() =>
     plantFilter ? absences.filter(a => a.plantId === plantFilter) : absences,
@@ -37,12 +40,13 @@ export function DailyView({ plantFilter }) {
     const plantsInScope = plantFilter ? [plantFilter] : PLANTS.map(p => p.id);
     const all = [];
     for (const plantId of plantsInScope) {
+      if (isHoliday(holidays, plantId, selectedDate)) continue;  // plant closed — skip
       const text = staffingByPlant[plantId]?.comments;
       if (!text) continue;
       all.push(...parseStaffingIssues(text, { plantId, date: selectedDate }));
     }
     return all;
-  }, [staffingByPlant, plantFilter, selectedDate]);
+  }, [staffingByPlant, plantFilter, selectedDate, holidays]);
 
   const stats = useMemo(() => {
     const total      = parsedAbsences.length;
@@ -79,6 +83,7 @@ export function DailyView({ plantFilter }) {
     // Headcount comes from parsing the staffing comment's totals lines —
     // parseStaffingHeadcount only needs the raw text, not the absence list.
     for (const plantId of plantsInScope) {
+      if (isHoliday(holidays, plantId, selectedDate)) continue;  // plant closed — no shifts
       const text = staffingByPlant[plantId]?.comments;
       if (!text) continue;
       const hc = parseStaffingHeadcount(text);
@@ -119,7 +124,7 @@ export function DailyView({ plantFilter }) {
       dlRatePct:    pct(dlTotal),
       idlRatePct:   ipct(idlTotal),
     };
-  }, [staffingByPlant, parsedAbsences, plantFilter]);
+  }, [staffingByPlant, parsedAbsences, plantFilter, selectedDate, holidays]);
 
   const scopeLabel = plantFilter ? plantFilter : 'all plants';
 

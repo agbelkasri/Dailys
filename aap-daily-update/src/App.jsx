@@ -5,6 +5,9 @@ import { usePresence } from './hooks/usePresence';
 import { useReport } from './hooks/useReport';
 import { useIsAdmin } from './hooks/useIsAdmin';
 import { useDarkMode } from './hooks/useDarkMode';
+import { useHolidays } from './hooks/useHolidays';
+import { isHoliday } from './utils/holidays';
+import { setHoliday } from './services/holidayService';
 import { LoginPage } from './components/auth/LoginPage';
 import { Header } from './components/layout/Header';
 import { DailyReport } from './components/report/DailyReport';
@@ -62,6 +65,24 @@ function PlantDailyTab({ plantId, user, activeTab, onTabChange, onLogout, isDark
 
   const reportId = `${plantId}_${selectedDate}`;
 
+  // Holidays (per-plant closed days). Admins can toggle; non-admins just see
+  // the closed state. Live config doc, so a toggle reflects everywhere fast.
+  const holidays = useHolidays();
+  const isHolidayDay = isHoliday(holidays, plantId, selectedDate);
+  const [holidayBusy, setHolidayBusy] = useState(false);
+
+  const handleToggleHoliday = async (next) => {
+    setHolidayBusy(true);
+    try {
+      await setHoliday(plantId, selectedDate, next);
+    } catch (err) {
+      console.error('Holiday toggle failed:', err);
+      alert('Could not update holiday: ' + err.message);
+    } finally {
+      setHolidayBusy(false);
+    }
+  };
+
   const { presenceMap, onlineUsers, setActiveSection, clearActiveSection } = usePresence(
     selectedDate,
     plantId,
@@ -111,6 +132,11 @@ function PlantDailyTab({ plantId, user, activeTab, onTabChange, onLogout, isDark
           onRequestEdit={handleRequestEdit}
           onSubmitChanges={handleSubmitChanges}
           onCancelEdit={handleCancelEdit}
+          /* Holiday controls */
+          isHolidayDay={isHolidayDay}
+          canToggleHoliday={isAdmin}
+          onToggleHoliday={handleToggleHoliday}
+          holidayToggleBusy={holidayBusy}
         />
       </main>
     </>

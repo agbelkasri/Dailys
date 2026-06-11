@@ -1,6 +1,8 @@
 import { useState, useMemo } from 'react';
 import { format, parseISO } from 'date-fns';
 import { useYearlyStaffing } from '../../hooks/useYearlyStaffing';
+import { useHolidays } from '../../hooks/useHolidays';
+import { isHoliday } from '../../utils/holidays';
 import { parseStaffingIssues, parseStaffingHeadcount } from '../../utils/parseStaffingIssues';
 import { StatsCard, StatsGrid } from './StatsCard';
 import { LineChart } from './charts/LineChart';
@@ -18,6 +20,7 @@ export function YearlyView({ plantFilter }) {
   const [year] = useState(() => new Date().getFullYear());
   const { byKey: yearStaffing, loading, endDate } =
     useYearlyStaffing(year, plantFilter);
+  const holidays = useHolidays();
 
   // ── Aggregate scheduled shifts across the year ────────────────────────────
   // For each weekday with a headcount line, the DL/IDL roster count contributes
@@ -28,6 +31,7 @@ export function YearlyView({ plantFilter }) {
     let idlPlanned = 0, idlUnplanned = 0, idlPersonDays = 0;
 
     for (const entry of Object.values(yearStaffing)) {
+      if (isHoliday(holidays, entry.plantId, entry.date)) continue;  // plant closed — skip
       const text = entry?.comments;
       if (!text) continue;
       const hc = parseStaffingHeadcount(text);
@@ -71,7 +75,7 @@ export function YearlyView({ plantFilter }) {
       dlRatePct:    pct(dlTotal),
       idlRatePct:   ipct(idlTotal),
     };
-  }, [yearStaffing]);
+  }, [yearStaffing, holidays]);
 
   // ── Per-month breakdown — for the trend chart ────────────────────────────
   // Bucket every day by month, aggregate the same way, then compute each
@@ -82,6 +86,7 @@ export function YearlyView({ plantFilter }) {
     }));
 
     for (const entry of Object.values(yearStaffing)) {
+      if (isHoliday(holidays, entry.plantId, entry.date)) continue;  // plant closed — skip
       const text = entry?.comments;
       if (!text) continue;
       const hc = parseStaffingHeadcount(text);
@@ -117,7 +122,7 @@ export function YearlyView({ plantFilter }) {
       b.idlPD > 0 ? +(b.idlAbs / b.idlPD * 100).toFixed(1) : 0
     );
     return { labels, dlPct, idlPct };
-  }, [yearStaffing]);
+  }, [yearStaffing, holidays]);
 
   const rangeLabel = endDate
     ? `Jan 1 — ${format(parseISO(endDate), 'MMM d')}, ${year}`

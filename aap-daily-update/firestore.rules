@@ -2,10 +2,33 @@ rules_version = '2';
 service cloud.firestore {
   match /databases/{database}/documents {
 
-    // Email distribution config — readable by all authenticated users, writable only by Cloud Functions (server-side)
+    // Whether the signed-in user's email is listed in /config/admins.emails.
+    // Tolerates either-case storage by comparing lowercased and exact —
+    // mirrors the client-side useIsAdmin.js check.
+    function isAdmin() {
+      return request.auth != null
+        && request.auth.token.email != null
+        && (
+          request.auth.token.email.lower()
+            in get(/databases/$(database)/documents/config/admins).data.emails
+          || request.auth.token.email
+            in get(/databases/$(database)/documents/config/admins).data.emails
+        );
+    }
+
+    // Per-plant holiday calendar — { EAP: [...dates], GAP: [...], SLP: [...] }.
+    // Readable by all authenticated users (every absenteeism view needs it);
+    // writable only by admins, who toggle holidays from the Daily Report.
+    match /config/holidays {
+      allow read:  if request.auth != null;
+      allow write: if isAdmin();
+    }
+
+    // All other config docs — readable by authenticated users, writable
+    // only by Cloud Functions (admin SDK server-side).
     match /config/{docId} {
       allow read: if request.auth != null;
-      allow write: if false; // Only Cloud Functions (admin SDK) can write
+      allow write: if false;
     }
 
     // Daily report documents

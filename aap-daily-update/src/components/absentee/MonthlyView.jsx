@@ -2,6 +2,8 @@ import { useState, useMemo } from 'react';
 import { format, addMonths, subMonths } from 'date-fns';
 import { useMonthlyAbsences } from '../../hooks/useMonthlyAbsences';
 import { useMonthlyStaffing } from '../../hooks/useMonthlyStaffing';
+import { useHolidays } from '../../hooks/useHolidays';
+import { isHoliday } from '../../utils/holidays';
 import { PLANTS } from '../../constants/absences';
 import { parseStaffingIssues, parseStaffingHeadcount } from '../../utils/parseStaffingIssues';
 import { StatsCard, StatsGrid } from './StatsCard';
@@ -40,6 +42,7 @@ export function MonthlyView({ plantFilter }) {
   // summed across the month into person-days).
   const { byKey: monthlyStaffing, loading: staffingLoading } =
     useMonthlyStaffing(year, month, plantFilter);
+  const holidays = useHolidays();
 
   // Apply plant filter
   const absences = useMemo(() =>
@@ -157,6 +160,7 @@ export function MonthlyView({ plantFilter }) {
     let idlPlanned = 0, idlUnplanned = 0, idlPersonDays = 0;
 
     for (const entry of Object.values(monthlyStaffing)) {
+      if (isHoliday(holidays, entry.plantId, entry.date)) continue;  // plant closed — skip
       const text = entry?.comments;
       if (!text) continue;
       const hc = parseStaffingHeadcount(text);
@@ -205,7 +209,7 @@ export function MonthlyView({ plantFilter }) {
       dlRatePct:    pct(dlTotal),
       idlRatePct:   ipct(idlTotal),
     };
-  }, [monthlyStaffing]);
+  }, [monthlyStaffing, holidays]);
 
   const monthLabel = format(refDate, 'MMMM yyyy');
 
