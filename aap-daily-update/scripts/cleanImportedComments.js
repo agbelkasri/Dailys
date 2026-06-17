@@ -21,7 +21,7 @@
 import { initializeApp, cert }      from 'firebase-admin/app';
 import { getFirestore, FieldValue } from 'firebase-admin/firestore';
 
-import { cleanCommentHtml } from '../src/utils/parseHistoricalExcel.js';
+import { cleanComment } from '../src/utils/parseHistoricalExcel.js';
 
 const serviceAccountJson = process.env.FIREBASE_SERVICE_ACCOUNT;
 if (!serviceAccountJson) {
@@ -55,7 +55,7 @@ for (const reportDoc of snap.docs) {
     const data = sec.data();
     const before = data.comments;
     if (!before) continue;                  // nothing to clean
-    const after = cleanCommentHtml(before);
+    const after = cleanComment(before, sec.id);
     if (after === before) { stats.sectionsUnchanged++; continue; }
 
     changedHere++;

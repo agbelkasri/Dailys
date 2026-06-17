@@ -137,21 +137,36 @@ export function htmlToText(html) {
     .replace(/&gt;/g, '>');
 }
 
-/** Convert plain cell text into clean <br>-joined HTML. <br> renders
- *  tightly in the rich-text viewer (no paragraph-margin gaps) and is the
- *  line break stripHtml already understands, so it parses losslessly. */
-export function plainToHtml(text) {
+/**
+ * Sections that render as rich text (dangerouslySetInnerHTML) — they need
+ * <br> line breaks. EVERY OTHER section is a plain <textarea>/<div> with
+ * `white-space: pre-wrap`, which renders raw \n newlines and would show
+ * HTML tags literally. Must stay in sync with the richText flag in
+ * ReportSection.jsx.
+ */
+const RICH_TEXT_SECTIONS = new Set(['tooling', 'operations-update']);
+
+/**
+ * Format clean cell text for a section's `comments` field, matching how
+ * that section is rendered:
+ *   - rich-text sections → <br>-joined, HTML-escaped
+ *   - everything else    → plain text with \n (pre-wrap renders the breaks)
+ */
+export function formatComment(text, sectionId) {
   const lines = cleanLines(text);
   if (lines.length === 0) return '';
-  const esc = (s) => s.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;');
-  return lines.map(l => esc(l)).join('<br>');
+  if (RICH_TEXT_SECTIONS.has(sectionId)) {
+    const esc = (s) => s.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;');
+    return lines.map(esc).join('<br>');
+  }
+  return lines.join('\n');
 }
 
-/** Re-clean an already-stored comment blob (HTML in → clean HTML out).
- *  Used by the one-off migration that tidies previously-imported data.
- *  Loses inline formatting — only safe on imported docs, which have none. */
-export function cleanCommentHtml(html) {
-  return plainToHtml(htmlToText(html));
+/** Re-clean an already-stored comment for the migration: decode whatever
+ *  HTML/plain blob is there, then re-emit in the correct format for the
+ *  section. Loses inline formatting — only safe on imported docs. */
+export function cleanComment(stored, sectionId) {
+  return formatComment(htmlToText(stored), sectionId);
 }
 
 // ── Sub-table parsers (inverse of fillCustomerInventory/Efficiency/Downtime) ──
@@ -298,7 +313,7 @@ export function parseSheetToSections(ws) {
     const r = cfg.row;
     const status   = readStatus(ws.getCell(`D${r}`));
     const rawText  = readText(ws.getCell(`E${r}`));
-    const comments = plainToHtml(rawText);
+    const comments = formatComment(rawText, sectionId);
 
     let subTableData = [];
     if (cfg.subTable === 'CUSTOMER_INVENTORY') {
