@@ -102,15 +102,56 @@ export function readPercentage(cell) {
   return readText(cell);
 }
 
-/** Convert plain text from a cell into the lightweight HTML the rich-text
- *  editor produces. Newlines become paragraph breaks. */
+/** Collapse raw multi-line text into clean lines:
+ *   - trailing whitespace trimmed from every line
+ *   - whitespace-only lines treated as blank
+ *   - leading / trailing blank lines removed
+ *   - runs of 2+ blank lines collapsed to a single blank
+ *  Mid-line spacing (a supervisor's column alignment) is preserved. */
+export function cleanLines(text) {
+  const out = [];
+  let pendingBlank = false;
+  for (const raw of String(text || '').split(/\r?\n/)) {
+    const line = raw.replace(/\s+$/, '');   // trim trailing ws only
+    if (!line.trim()) {
+      if (out.length > 0) pendingBlank = true;  // defer; drop leading + trailing
+      continue;
+    }
+    if (pendingBlank) { out.push(''); pendingBlank = false; }
+    out.push(line);
+  }
+  return out;
+}
+
+/** Convert a stored rich-text/HTML blob back to plain text. Block-level
+ *  closers become newlines so paragraph-wrapped content keeps its lines. */
+export function htmlToText(html) {
+  if (!html) return '';
+  return String(html)
+    .replace(/<br\s*\/?>/gi, '\n')
+    .replace(/<\/(p|div|li)>/gi, '\n')
+    .replace(/<[^>]+>/g, '')
+    .replace(/&nbsp;/g, ' ')
+    .replace(/&amp;/g, '&')
+    .replace(/&lt;/g, '<')
+    .replace(/&gt;/g, '>');
+}
+
+/** Convert plain cell text into clean <br>-joined HTML. <br> renders
+ *  tightly in the rich-text viewer (no paragraph-margin gaps) and is the
+ *  line break stripHtml already understands, so it parses losslessly. */
 export function plainToHtml(text) {
-  if (!text) return '';
+  const lines = cleanLines(text);
+  if (lines.length === 0) return '';
   const esc = (s) => s.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;');
-  return text
-    .split(/\r?\n/)
-    .map(line => `<p>${esc(line) || '<br>'}</p>`)
-    .join('');
+  return lines.map(l => esc(l)).join('<br>');
+}
+
+/** Re-clean an already-stored comment blob (HTML in → clean HTML out).
+ *  Used by the one-off migration that tidies previously-imported data.
+ *  Loses inline formatting — only safe on imported docs, which have none. */
+export function cleanCommentHtml(html) {
+  return plainToHtml(htmlToText(html));
 }
 
 // ── Sub-table parsers (inverse of fillCustomerInventory/Efficiency/Downtime) ──

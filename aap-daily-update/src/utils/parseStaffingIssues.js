@@ -78,10 +78,14 @@ function splitNameAndNote(raw) {
   return { name, notes };
 }
 
-/** Strip HTML tags / entities so rich-text carry-forward doesn't break parsing. */
+/** Strip HTML tags / entities so rich-text carry-forward doesn't break parsing.
+ *  Block-level closers (</p>, </div>, </li>) become newlines — otherwise
+ *  paragraph-wrapped content (e.g. the historical Excel importer's output)
+ *  collapses onto a single line and every per-line parse fails. */
 function stripHtml(str) {
   return str
     .replace(/<br\s*\/?>/gi, '\n')
+    .replace(/<\/(p|div|li)>/gi, '\n')
     .replace(/<[^>]+>/g, '')
     .replace(/&nbsp;/g, ' ')
     .replace(/&amp;/g, '&')
