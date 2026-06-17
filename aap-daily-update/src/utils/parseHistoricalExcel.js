@@ -40,7 +40,30 @@ const STATUS_BY_COLOR = {
   'FFC00000': 'R',
 };
 
-const DAY_NAMES = ['Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday'];
+/**
+ * Map a sheet name's leading day token to a Mon–Fri index (0–4), or null.
+ * Tolerates full names AND abbreviations seen across older/newer templates:
+ *   Mon / Monday
+ *   Tue / Tues / Tuesday
+ *   Wed / Weds / Wednesday
+ *   Thu / Thur / Thurs / Thursday
+ *   Fri / Friday
+ * Matching is on the leading letters (case-insensitive), so a trailing
+ * date like "Mon 1.12" or "Tues 1.13" still resolves correctly.
+ */
+const DAY_MATCHERS = [
+  { idx: 0, re: /^mon/i },
+  { idx: 1, re: /^tue/i },
+  { idx: 2, re: /^wed/i },
+  { idx: 3, re: /^thu/i },
+  { idx: 4, re: /^fri/i },
+];
+
+export function dayIndexFromSheetName(sheetName) {
+  const t = (sheetName || '').trim();
+  for (const m of DAY_MATCHERS) if (m.re.test(t)) return m.idx;
+  return null;
+}
 
 // ── Cell readers ────────────────────────────────────────────────────────────
 
@@ -189,15 +212,20 @@ export function parseFilename(filename) {
   return null;
 }
 
-/** Pull the date out of a sheet name like "Monday 5.25.26" — null if absent. */
-export function dateFromSheetName(sheetName) {
-  const m = sheetName.match(/(\d{1,2})\.(\d{1,2})\.(\d{2,4})/);
-  return m ? isoDate(m[3], m[1], m[2]) : null;
-}
-
-/** Returns the day prefix if the sheet name starts with one, else null. */
-export function dayPrefix(sheetName) {
-  return DAY_NAMES.find(d => sheetName.startsWith(d)) || null;
+/**
+ * Pull the date out of a sheet name. Handles both the full
+ * "Monday 5.25.26" (M.D.YY) form and the abbreviated "Mon 1.12" (M.D,
+ * no year) form. For the no-year form, `fallbackYear` (derived from the
+ * filename's week-start) supplies the year. Returns null if no date.
+ */
+export function dateFromSheetName(sheetName, fallbackYear) {
+  // Full M.D.YY
+  let m = sheetName.match(/(\d{1,2})\.(\d{1,2})\.(\d{2,4})/);
+  if (m) return isoDate(m[3], m[1], m[2]);
+  // M.D only — borrow the year from the week-start
+  m = sheetName.match(/(\d{1,2})\.(\d{1,2})(?!\d)/);
+  if (m && fallbackYear) return isoDate(fallbackYear, m[1], m[2]);
+  return null;
 }
 
 // ── Public entry points ─────────────────────────────────────────────────────
@@ -257,13 +285,14 @@ export function parseWorkbook(wb, filename) {
     return days;
   }
 
-  // Weekly file — walk every sheet, accept any whose name starts with a weekday
+  // Weekly file — walk every sheet, accept any whose name leads with a
+  // weekday token (full or abbreviated). Date comes from the sheet name
+  // when present, else week-start + weekday offset.
+  const fallbackYear = weekStart.slice(0, 4);
   for (const ws of wb.worksheets) {
-    const prefix = dayPrefix(ws.name);
-    if (!prefix) continue;
-    const dateFromName = dateFromSheetName(ws.name);
-    const dayIdx = DAY_NAMES.indexOf(prefix);
-    const date = dateFromName || addDays(weekStart, dayIdx);
+    const dayIdx = dayIndexFromSheetName(ws.name);
+    if (dayIdx == null) continue;
+    const date = dateFromSheetName(ws.name, fallbackYear) || addDays(weekStart, dayIdx);
     const sections = parseSheetToSections(ws);
     if (Object.keys(sections).length === 0) continue;
     days.push({ plant, date, sheetName: ws.name, sections });
