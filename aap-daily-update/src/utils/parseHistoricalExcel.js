@@ -195,17 +195,34 @@ export function addDays(dateStr, n) {
 }
 
 /**
- * Parse a filename — supports both shapes:
- *   "GAP Daily Report Wk 3.9.26.xlsx"           → { plant, weekStart }
- *   "EAP-Daily-Update-2026-03-09.xlsx"          → { plant, singleDay }
+ * Parse a filename. Tolerant of the many real-world variations seen in
+ * the historical files — the week keyword, separators, year length, and
+ * trailing whitespace all vary between supervisors and template eras:
+ *
+ *   "GAP Daily Report Wk 3.9.26.xlsx"        → { plant, weekStart }
+ *   "EAP Daily Report Week 1.19.26.xlsx"     → "Week" instead of "Wk"
+ *   "EAP Daily Report 1.26.2026.xlsx"        → no keyword, 4-digit year
+ *   "EAP Daily Report Wk 3.9.26 .xlsx"       → trailing space before .xlsx
+ *   "EAP-Daily-Update-2026-03-09.xlsx"       → { plant, singleDay }
+ *
+ * The per-sheet date (read from the sheet name, or week-start + weekday
+ * offset) is the source of truth for each day, so a slightly-off filename
+ * date never matters as long as it lands on the right Monday.
+ *
  * Returns null on no match.
  */
 export function parseFilename(filename) {
-  let m = filename.match(/^(EAP|GAP|SLP)[\s_-]*Daily[\s_-]*Report[\s_-]*Wk[\s_-]*(\d{1,2})\.(\d{1,2})\.(\d{2,4})\.xlsx$/i);
+  // Weekly: "<Plant> Daily Report [Wk|Week] M.D.YY[YY]" + optional trailing ws
+  let m = filename.match(
+    /^(EAP|GAP|SLP)[\s_-]*Daily[\s_-]*Report[\s_-]*(?:Wk|Week)?[\s_.-]*(\d{1,2})\.(\d{1,2})\.(\d{2,4})\s*\.xlsx$/i
+  );
   if (m) {
     return { plant: m[1].toUpperCase(), weekStart: isoDate(m[4], m[2], m[3]) };
   }
-  m = filename.match(/^(EAP|GAP|SLP)[\s_-]*Daily[\s_-]*Update[\s_-]*(\d{4})-(\d{2})-(\d{2})\.xlsx$/i);
+  // Single-day legacy: "<Plant> Daily Update YYYY-MM-DD"
+  m = filename.match(
+    /^(EAP|GAP|SLP)[\s_-]*Daily[\s_-]*Update[\s_-]*(\d{4})-(\d{2})-(\d{2})\s*\.xlsx$/i
+  );
   if (m) {
     return { plant: m[1].toUpperCase(), singleDay: `${m[2]}-${m[3]}-${m[4]}` };
   }
