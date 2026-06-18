@@ -1,6 +1,5 @@
 import { useState, useMemo } from 'react';
 import { format, addMonths, subMonths } from 'date-fns';
-import { useMonthlyAbsences } from '../../hooks/useMonthlyAbsences';
 import { useMonthlyStaffing } from '../../hooks/useMonthlyStaffing';
 import { useHolidays } from '../../hooks/useHolidays';
 import { isHoliday } from '../../utils/holidays';
@@ -15,6 +14,20 @@ import { DayOfWeekChart } from './charts/DayOfWeekChart';
 import styles from './MonthlyView.module.css';
 
 const PLANT_MAP = Object.fromEntries(PLANTS.map(p => [p.id, p.name]));
+
+/** Parse every in-scope, non-holiday day's staffing comment in a
+ *  useMonthlyStaffing map into a flat array of absence rows. Shared shape
+ *  with the Daily View's parsedAbsences (employeeName, plantId, date, type,
+ *  laborType, shift, durationHours, …). */
+function parseMonthAbsences(staffingMap, holidays) {
+  const all = [];
+  for (const entry of Object.values(staffingMap)) {
+    if (!entry?.comments) continue;
+    if (isHoliday(holidays, entry.plantId, entry.date)) continue;
+    all.push(...parseStaffingIssues(entry.comments, { plantId: entry.plantId, date: entry.date }));
+  }
+  return all;
+}
 
 function getWorkingDays(year, month) {
   const daysInMonth = new Date(year, month + 1, 0).getDate();
@@ -31,23 +44,27 @@ export function MonthlyView({ plantFilter }) {
   const year  = refDate.getFullYear();
   const month = refDate.getMonth();
 
-  const { absences: allAbsences, loading, error } = useMonthlyAbsences(year, month);
-
-  // Previous month for trend comparison
-  const prevRef = subMonths(refDate, 1);
-  const { absences: prevAbsences } = useMonthlyAbsences(prevRef.getFullYear(), prevRef.getMonth());
-
-  // Live staffing-issues comments for every weekday in the month, used to
-  // compute workforce-percent stats (same formula as the Daily View, just
-  // summed across the month into person-days).
+  // Live staffing-issues comments for every weekday in the month (current
+  // + previous, for the month-over-month delta). Single source of truth for
+  // BOTH the count cards/charts and the workforce-% cards, so everything
+  // agrees and — crucially — historical imported reports (which populate
+  // staffing comments, not the /absences collection) show up here too.
   const { byKey: monthlyStaffing, loading: staffingLoading } =
     useMonthlyStaffing(year, month, plantFilter);
+  const prevRef = subMonths(refDate, 1);
+  const { byKey: prevStaffing } =
+    useMonthlyStaffing(prevRef.getFullYear(), prevRef.getMonth(), plantFilter);
   const holidays = useHolidays();
 
-  // Apply plant filter
-  const absences = useMemo(() =>
-    plantFilter ? allAbsences.filter(a => a.plantId === plantFilter) : allAbsences,
-    [allAbsences, plantFilter]
+  // Parse every in-scope, non-holiday day's staffing comment into absence
+  // rows. useMonthlyStaffing already scopes to plantFilter, so no re-filter.
+  const absences = useMemo(
+    () => parseMonthAbsences(monthlyStaffing, holidays),
+    [monthlyStaffing, holidays]
+  );
+  const prevAbsences = useMemo(
+    () => parseMonthAbsences(prevStaffing, holidays),
+    [prevStaffing, holidays]
   );
 
   // Aggregate data
@@ -75,7 +92,7 @@ export function MonthlyView({ plantFilter }) {
     const peakLabel = peakCount > 0 ? `${format(new Date(peakDay + 'T12:00:00'), 'MMM d')} (${peakCount})` : '-';
 
     // Month-over-month
-    const prevTotal = (plantFilter ? prevAbsences.filter(a => a.plantId === plantFilter) : prevAbsences).length;
+    const prevTotal = prevAbsences.length;
     let momLabel = '-';
     if (prevTotal > 0) {
       const pct = Math.round(((total - prevTotal) / prevTotal) * 100);
@@ -92,15 +109,6 @@ export function MonthlyView({ plantFilter }) {
     // Plant breakdown for horizontal bar chart
     const byPlant = {};
     absences.forEach(a => { byPlant[a.plantId] = (byPlant[a.plantId] || 0) + 1; });
-
-    // 6-month trend (for current + 5 previous months)
-    const trendLabels = [];
-    const trendData   = [];
-    for (let i = 5; i >= 0; i--) {
-      const m = subMonths(refDate, i);
-      trendLabels.push(format(m, 'MMM'));
-      trendData.push(0); // placeholder; real data needs separate hook per month
-    }
 
     // Daily bar chart data
     const daysInMonth = new Date(year, month + 1, 0).getDate();
@@ -143,7 +151,7 @@ export function MonthlyView({ plantFilter }) {
       byDay, dowCounts, dailyBars, topAbsentees,
       plantSegments,
     };
-  }, [absences, prevAbsences, year, month, plantFilter]);
+  }, [absences, prevAbsences, year, month]);
 
   // ── Workforce-% over the month (person-day basis) ────────────────────────
   // For each day's staffing comment we parse the DL headcount and the DL
@@ -232,10 +240,8 @@ export function MonthlyView({ plantFilter }) {
         >›</button>
       </div>
 
-      {loading ? (
+      {staffingLoading ? (
         <div className={styles.loading}>Loading…</div>
-      ) : error ? (
-        <div className={styles.errorMsg}>{error}</div>
       ) : (
         <>
           {/* Workforce-% — same formula as Daily View, summed across the
