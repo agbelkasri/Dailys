@@ -9,8 +9,6 @@ import { StatsCard, StatsGrid } from './StatsCard';
 import { CalendarHeatmap } from './charts/CalendarHeatmap';
 import { BarChart } from './charts/BarChart';
 import { DonutChart } from './charts/DonutChart';
-import { LineChart } from './charts/LineChart';
-import { DayOfWeekChart } from './charts/DayOfWeekChart';
 import styles from './MonthlyView.module.css';
 
 const PLANT_MAP = Object.fromEntries(PLANTS.map(p => [p.id, p.name]));
@@ -99,13 +97,6 @@ export function MonthlyView({ plantFilter }) {
       momLabel = `${pct > 0 ? '+' : ''}${pct}% vs last month`;
     }
 
-    // Day of week counts (0=Sun..6=Sat)
-    const dowCounts = [0, 0, 0, 0, 0, 0, 0];
-    absences.forEach(a => {
-      const idx = new Date(a.date + 'T12:00:00').getDay();
-      dowCounts[idx]++;
-    });
-
     // Plant breakdown for horizontal bar chart
     const byPlant = {};
     absences.forEach(a => { byPlant[a.plantId] = (byPlant[a.plantId] || 0) + 1; });
@@ -129,13 +120,6 @@ export function MonthlyView({ plantFilter }) {
       });
     }
 
-    // Top absentees
-    const empCounts = {};
-    absences.forEach(a => { empCounts[a.employeeName] = (empCounts[a.employeeName] || 0) + 1; });
-    const topAbsentees = Object.entries(empCounts)
-      .sort((a, b) => b[1] - a[1])
-      .slice(0, 5);
-
     // Plant segments for donut
     const plantSegments = PLANTS
       .filter(p => byPlant[p.id])
@@ -148,7 +132,7 @@ export function MonthlyView({ plantFilter }) {
     return {
       total, planned, unplanned, direct, indirect, shift1, shift2,
       avgPerDay, totalHours, peakLabel, momLabel,
-      byDay, dowCounts, dailyBars, topAbsentees,
+      byDay, dailyBars,
       plantSegments,
     };
   }, [absences, prevAbsences, year, month]);
@@ -220,12 +204,6 @@ export function MonthlyView({ plantFilter }) {
   }, [monthlyStaffing, holidays]);
 
   const monthLabel = format(refDate, 'MMMM yyyy');
-
-  // 6-month trend line — use monthly totals from absences data grouped by month
-  const trendLabels = [];
-  for (let i = 5; i >= 0; i--) {
-    trendLabels.push(format(subMonths(refDate, i), 'MMM'));
-  }
 
   return (
     <div>
@@ -379,35 +357,6 @@ export function MonthlyView({ plantFilter }) {
             <div className={styles.cardHeader}>Daily Absences</div>
             <div className={styles.cardBody}>
               <BarChart data={data.dailyBars} options={{ stacked: true, showValues: false, height: 200 }} />
-            </div>
-          </div>
-
-          {/* Day of week + Top absentees */}
-          <div className={styles.chartGrid}>
-            <div className={styles.chartCard}>
-              <div className={styles.cardHeader}>Day of Week Distribution</div>
-              <div className={styles.cardBody}>
-                <DayOfWeekChart counts={data.dowCounts} />
-              </div>
-            </div>
-
-            <div className={styles.chartCard}>
-              <div className={styles.cardHeader}>Top Absentees</div>
-              <div className={styles.cardBody}>
-                {data.topAbsentees.length === 0 ? (
-                  <div className={styles.noData}>No data</div>
-                ) : (
-                  <div className={styles.topList}>
-                    {data.topAbsentees.map(([name, count], i) => (
-                      <div key={name} className={styles.topItem}>
-                        <span className={styles.topRank}>{i + 1}.</span>
-                        <span className={styles.topName}>{name}</span>
-                        <span className={styles.topCount}>{count} absence{count !== 1 ? 's' : ''}</span>
-                      </div>
-                    ))}
-                  </div>
-                )}
-              </div>
             </div>
           </div>
         </>
