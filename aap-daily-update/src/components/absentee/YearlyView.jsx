@@ -176,12 +176,12 @@ export function YearlyView({ plantFilter }) {
             </div>
           </div>
 
-          {/* Total / Planned / Unplanned (DL-relative) */}
+          {/* Total (unplanned) / Planned (DL-relative) */}
           <StatsGrid>
             <StatsCard
               label="Total Absenteeism %"
-              value={rate.totalPct}
-              sub={`${rate.dlTotal} absences out of ${rate.personDays || '—'} shifts`}
+              value={rate.unplannedPct}
+              sub={`${rate.dlUnplanned} absences out of ${rate.personDays || '—'} shifts`}
               accent="#1a3a5c"
             />
             <StatsCard
@@ -189,12 +189,6 @@ export function YearlyView({ plantFilter }) {
               value={rate.plannedPct}
               sub={`${rate.dlPlanned} absences out of ${rate.personDays || '—'} shifts`}
               accent="#2563eb"
-            />
-            <StatsCard
-              label="Unplanned %"
-              value={rate.unplannedPct}
-              sub={`${rate.dlUnplanned} absences out of ${rate.personDays || '—'} shifts`}
-              accent="#dc2626"
             />
           </StatsGrid>
 

@@ -89,11 +89,12 @@ export function MonthlyView({ plantFilter }) {
     byDay.forEach((cnt, d) => { if (cnt > peakCount) { peakDay = d; peakCount = cnt; } });
     const peakLabel = peakCount > 0 ? `${format(new Date(peakDay + 'T12:00:00'), 'MMM d')} (${peakCount})` : '-';
 
-    // Month-over-month
-    const prevTotal = prevAbsences.length;
+    // Month-over-month — compares unplanned, since the "Total Absences"
+    // card now shows the unplanned count.
+    const prevUnplanned = prevAbsences.filter(a => a.type === 'unplanned').length;
     let momLabel = '-';
-    if (prevTotal > 0) {
-      const pct = Math.round(((total - prevTotal) / prevTotal) * 100);
+    if (prevUnplanned > 0) {
+      const pct = Math.round(((unplanned - prevUnplanned) / prevUnplanned) * 100);
       momLabel = `${pct > 0 ? '+' : ''}${pct}% vs last month`;
     }
 
@@ -272,8 +273,8 @@ export function MonthlyView({ plantFilter }) {
           <StatsGrid>
             <StatsCard
               label="Total Absenteeism %"
-              value={rate.totalPct}
-              sub={`${rate.dlTotal} absences out of ${rate.personDays || '—'} shifts`}
+              value={rate.unplannedPct}
+              sub={`${rate.dlUnplanned} absences out of ${rate.personDays || '—'} shifts`}
               accent="#1a3a5c"
             />
             <StatsCard
@@ -282,20 +283,13 @@ export function MonthlyView({ plantFilter }) {
               sub={`${rate.dlPlanned} absences out of ${rate.personDays || '—'} shifts`}
               accent="#2563eb"
             />
-            <StatsCard
-              label="Unplanned %"
-              value={rate.unplannedPct}
-              sub={`${rate.dlUnplanned} absences out of ${rate.personDays || '—'} shifts`}
-              accent="#dc2626"
-            />
           </StatsGrid>
 
           {/* Stats */}
           <StatsGrid>
-            <StatsCard label="Total Absences" value={data.total}     accent="#1a3a5c" sub={data.momLabel} />
-            <StatsCard label="Planned"        value={data.planned}   accent="#2563eb" />
-            <StatsCard label="Unplanned"      value={data.unplanned} accent="#dc2626" />
-            <StatsCard label="Direct Labor"   value={data.direct}    accent="#16a34a" />
+            <StatsCard label="Total Absences" value={data.unplanned}  accent="#1a3a5c" sub={data.momLabel} />
+            <StatsCard label="Planned"        value={data.planned}    accent="#2563eb" />
+            <StatsCard label="Direct Labor"   value={data.direct}     accent="#16a34a" />
             <StatsCard label="Indirect Labor" value={data.indirect}  accent="#d97706" />
             <StatsCard label="1st Shift"      value={data.shift1}    accent="#0891b2" />
             <StatsCard label="2nd Shift"      value={data.shift2}    accent="#7c3aed" />

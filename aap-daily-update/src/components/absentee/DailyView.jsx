@@ -212,8 +212,8 @@ export function DailyView({ plantFilter }) {
       <StatsGrid>
         <StatsCard
           label="Total Absenteeism %"
-          value={rate.totalPct}
-          sub={`${rate.dlTotal} of ${rate.headcount || '—'} FT DL`}
+          value={rate.unplannedPct}
+          sub={`${rate.dlUnplanned} of ${rate.headcount || '—'} FT DL`}
           accent="#1a3a5c"
         />
         <StatsCard
@@ -222,19 +222,12 @@ export function DailyView({ plantFilter }) {
           sub={`${rate.dlPlanned} of ${rate.headcount || '—'} FT DL`}
           accent="#2563eb"
         />
-        <StatsCard
-          label="Unplanned %"
-          value={rate.unplannedPct}
-          sub={`${rate.dlUnplanned} of ${rate.headcount || '—'} FT DL`}
-          accent="#dc2626"
-        />
       </StatsGrid>
 
       {/* Raw counts — still useful for daily ops */}
       <StatsGrid>
-        <StatsCard label="Total Absences" value={stats.total} accent="#1a3a5c" />
+        <StatsCard label="Total Absences" value={stats.unplanned} accent="#1a3a5c" />
         <StatsCard label="Planned"        value={stats.planned}   accent="#2563eb" />
-        <StatsCard label="Unplanned"      value={stats.unplanned} accent="#dc2626" />
         <StatsCard label="Direct Labor"   value={stats.direct}    accent="#16a34a" />
         <StatsCard label="Indirect Labor" value={stats.indirect}  accent="#d97706" />
         <StatsCard label="Plants Affected" value={stats.plants}   accent="#7c3aed" />
