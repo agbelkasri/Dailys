@@ -194,13 +194,14 @@ export function MonthlyView({ plantFilter }) {
       daysCounted:   dlDaysCounted,
       dlPlanned, dlUnplanned, dlTotal,
       idlPlanned, idlUnplanned, idlTotal,
-      // DL-relative — drive the smaller Total/Planned/Unplanned cards
+      // DL-relative — drive the smaller Total/Planned cards
       totalPct:     pct(dlTotal),
       plannedPct:   pct(dlPlanned),
       unplannedPct: pct(dlUnplanned),
-      // Each labor type relative to its own person-days — DL vs IDL hero
-      dlRatePct:    pct(dlTotal),
-      idlRatePct:   ipct(idlTotal),
+      // Headline DL vs IDL hero — HR tracks UNPLANNED absenteeism, so the
+      // hero shows each labor type's unplanned rate over its person-days.
+      dlRatePct:    pct(dlUnplanned),
+      idlRatePct:   ipct(idlUnplanned),
     };
   }, [monthlyStaffing, holidays]);
 
@@ -232,7 +233,7 @@ export function MonthlyView({ plantFilter }) {
               Monthly absenteeism rate — {plantFilter || 'all plants'}
               {rate.personDays > 0 && (
                 <span className={styles.rateDenominator}>
-                  {' '}({rate.dlTotal} absences out of {rate.personDays} shifts
+                  {' '}({rate.dlUnplanned} unplanned absences out of {rate.personDays} shifts
                   across {rate.daysCounted} day{rate.daysCounted !== 1 ? 's' : ''})
                 </span>
               )}
@@ -248,16 +249,16 @@ export function MonthlyView({ plantFilter }) {
             </div>
           )}
 
-          {/* Direct vs Indirect Labor — headline card. Each side shows the
-              unfulfilled-shift rate against its own workforce — sum of
-              scheduled shifts across every weekday in the month that has
-              a headcount line. */}
+          {/* Direct vs Indirect Labor — headline card. HR tracks UNPLANNED
+              absenteeism, so each side shows the unplanned rate against its
+              own workforce — sum of scheduled shifts across every weekday
+              in the month that has a headcount line. */}
           <div className={styles.dlIdlHero}>
             <div className={styles.dlIdlHalf}>
               <div className={styles.dlIdlPct}>{rate.dlRatePct}</div>
               <div className={styles.dlIdlLabel}>Direct Labor</div>
               <div className={styles.dlIdlSub}>
-                {rate.dlTotal} absences out of {rate.personDays || '—'} shifts
+                {rate.dlUnplanned} unplanned of {rate.personDays || '—'} shifts
               </div>
             </div>
             <div className={styles.dlIdlDivider} aria-hidden="true" />
@@ -265,7 +266,7 @@ export function MonthlyView({ plantFilter }) {
               <div className={styles.dlIdlPct}>{rate.idlRatePct}</div>
               <div className={styles.dlIdlLabel}>Indirect Labor</div>
               <div className={styles.dlIdlSub}>
-                {rate.idlTotal} absences out of {rate.idlPersonDays || '—'} shifts
+                {rate.idlUnplanned} unplanned of {rate.idlPersonDays || '—'} shifts
               </div>
             </div>
           </div>

@@ -116,13 +116,14 @@ export function DailyView({ plantFilter }) {
       idlHeadcount,
       dlPlanned, dlUnplanned, dlTotal,
       idlPlanned, idlUnplanned, idlTotal,
-      // DL-relative (used by the small Total/Planned/Unplanned cards below)
+      // DL-relative (used by the small Total/Planned cards below)
       totalPct:     pct(dlTotal),
       plannedPct:   pct(dlPlanned),
       unplannedPct: pct(dlUnplanned),
-      // Each labor type relative to its own workforce — headline DL vs IDL card
-      dlRatePct:    pct(dlTotal),
-      idlRatePct:   ipct(idlTotal),
+      // Headline DL vs IDL card — HR tracks UNPLANNED absenteeism, so the
+      // hero shows each labor type's unplanned rate against its workforce.
+      dlRatePct:    pct(dlUnplanned),
+      idlRatePct:   ipct(idlUnplanned),
     };
   }, [staffingByPlant, parsedAbsences, plantFilter, selectedDate, holidays]);
 
@@ -174,7 +175,7 @@ export function DailyView({ plantFilter }) {
           Absenteeism rate — {scopeLabel}
           {rate.headcount > 0 && (
             <span className={styles.rateDenominator}>
-              {' '}({rate.dlTotal} of {rate.headcount} FT DL workers)
+              {' '}({rate.dlUnplanned} unplanned of {rate.headcount} FT DL workers)
             </span>
           )}
         </div>
@@ -188,15 +189,15 @@ export function DailyView({ plantFilter }) {
         </div>
       )}
 
-      {/* Direct vs Indirect Labor — headline card. Each side shows the
-          absence rate against its own workforce headcount (DL or IDL),
-          parsed from the Staffing Issues comment. */}
+      {/* Direct vs Indirect Labor — headline card. HR tracks UNPLANNED
+          absenteeism, so each side shows the unplanned rate against its
+          own workforce headcount (DL or IDL). */}
       <div className={styles.dlIdlHero}>
         <div className={styles.dlIdlHalf}>
           <div className={styles.dlIdlPct}>{rate.dlRatePct}</div>
           <div className={styles.dlIdlLabel}>Direct Labor</div>
           <div className={styles.dlIdlSub}>
-            {rate.dlTotal} of {rate.headcount || '—'} DL workers
+            {rate.dlUnplanned} unplanned of {rate.headcount || '—'} DL workers
           </div>
         </div>
         <div className={styles.dlIdlDivider} aria-hidden="true" />
@@ -204,7 +205,7 @@ export function DailyView({ plantFilter }) {
           <div className={styles.dlIdlPct}>{rate.idlRatePct}</div>
           <div className={styles.dlIdlLabel}>Indirect Labor</div>
           <div className={styles.dlIdlSub}>
-            {rate.idlTotal} of {rate.idlHeadcount || '—'} IDL workers
+            {rate.idlUnplanned} unplanned of {rate.idlHeadcount || '—'} IDL workers
           </div>
         </div>
       </div>

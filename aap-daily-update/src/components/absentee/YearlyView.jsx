@@ -72,8 +72,10 @@ export function YearlyView({ plantFilter }) {
       totalPct:     pct(dlTotal),
       plannedPct:   pct(dlPlanned),
       unplannedPct: pct(dlUnplanned),
-      dlRatePct:    pct(dlTotal),
-      idlRatePct:   ipct(idlTotal),
+      // Headline DL vs IDL hero — HR tracks UNPLANNED absenteeism, so the
+      // hero shows each labor type's unplanned rate over its person-days.
+      dlRatePct:    pct(dlUnplanned),
+      idlRatePct:   ipct(idlUnplanned),
     };
   }, [yearStaffing, holidays]);
 
@@ -96,13 +98,14 @@ export function YearlyView({ plantFilter }) {
       const bucket = monthly[monthIdx];
       const parsed = parseStaffingIssues(text, { plantId: entry.plantId, date: entry.date });
 
+      // Unplanned only — matches the headline hero (HR's tracked metric)
       if (hc.DL_total != null) {
         bucket.dlPD += hc.DL_total;
-        bucket.dlAbs += parsed.filter(a => a.laborType === 'direct').length;
+        bucket.dlAbs += parsed.filter(a => a.laborType === 'direct' && a.type === 'unplanned').length;
       }
       if (hc.IDL_total != null) {
         bucket.idlPD += hc.IDL_total;
-        bucket.idlAbs += parsed.filter(a => a.laborType === 'indirect').length;
+        bucket.idlAbs += parsed.filter(a => a.laborType === 'indirect' && a.type === 'unplanned').length;
       }
     }
 
@@ -151,19 +154,20 @@ export function YearlyView({ plantFilter }) {
             <div className={styles.rateHeaderText}>
               Year-to-date absenteeism rate — {scopeLabel}
               <span className={styles.rateDenominator}>
-                {' '}({rate.dlTotal} absences out of {rate.personDays || '—'} shifts
+                {' '}({rate.dlUnplanned} unplanned absences out of {rate.personDays || '—'} shifts
                 across {rate.daysCounted} day{rate.daysCounted !== 1 ? 's' : ''})
               </span>
             </div>
           </div>
 
-          {/* Direct vs Indirect Labor — headline card */}
+          {/* Direct vs Indirect Labor — headline card. HR tracks UNPLANNED
+              absenteeism, so each side shows the unplanned rate. */}
           <div className={styles.dlIdlHero}>
             <div className={styles.dlIdlHalf}>
               <div className={styles.dlIdlPct}>{rate.dlRatePct}</div>
               <div className={styles.dlIdlLabel}>Direct Labor</div>
               <div className={styles.dlIdlSub}>
-                {rate.dlTotal} absences out of {rate.personDays || '—'} shifts
+                {rate.dlUnplanned} unplanned of {rate.personDays || '—'} shifts
               </div>
             </div>
             <div className={styles.dlIdlDivider} aria-hidden="true" />
@@ -171,7 +175,7 @@ export function YearlyView({ plantFilter }) {
               <div className={styles.dlIdlPct}>{rate.idlRatePct}</div>
               <div className={styles.dlIdlLabel}>Indirect Labor</div>
               <div className={styles.dlIdlSub}>
-                {rate.idlTotal} absences out of {rate.idlPersonDays || '—'} shifts
+                {rate.idlUnplanned} unplanned of {rate.idlPersonDays || '—'} shifts
               </div>
             </div>
           </div>
@@ -196,7 +200,7 @@ export function YearlyView({ plantFilter }) {
           {trend.labels.length > 0 && (
             <div className={styles.chartCard}>
               <div className={styles.cardHeader}>
-                Monthly Absenteeism % — Direct vs Indirect Labor
+                Monthly Unplanned Absenteeism % — Direct vs Indirect Labor
               </div>
               <div className={styles.cardBody}>
                 <LineChart
