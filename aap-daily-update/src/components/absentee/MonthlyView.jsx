@@ -65,22 +65,25 @@ export function MonthlyView({ plantFilter }) {
     [prevStaffing, holidays]
   );
 
-  // Aggregate data
+  // Aggregate data. HR's headline metric is UNPLANNED absenteeism, so every
+  // stat and infographic here counts unplanned only — except things
+  // explicitly labeled "Planned" (the Planned card, the blue segments in
+  // the stacked daily bar).
   const data = useMemo(() => {
-    const total     = absences.length;
+    const unplannedAbs = absences.filter(a => a.type === 'unplanned');
     const planned   = absences.filter(a => a.type === 'planned').length;
-    const unplanned = absences.filter(a => a.type === 'unplanned').length;
-    const direct    = absences.filter(a => (a.laborType || 'direct') === 'direct').length;
-    const indirect  = absences.filter(a => a.laborType === 'indirect').length;
-    const shift1    = absences.filter(a => (a.shift || '1st') === '1st').length;
-    const shift2    = absences.filter(a => a.shift === '2nd').length;
+    const unplanned = unplannedAbs.length;
+    const direct    = unplannedAbs.filter(a => (a.laborType || 'direct') === 'direct').length;
+    const indirect  = unplannedAbs.filter(a => a.laborType === 'indirect').length;
+    const shift1    = unplannedAbs.filter(a => (a.shift || '1st') === '1st').length;
+    const shift2    = unplannedAbs.filter(a => a.shift === '2nd').length;
     const workDays  = getWorkingDays(year, month);
-    const avgPerDay = workDays > 0 ? (total / workDays).toFixed(1) : '0';
-    const totalHours = absences.reduce((s, a) => s + (a.durationHours || 0), 0);
+    const avgPerDay = workDays > 0 ? (unplanned / workDays).toFixed(1) : '0';
+    const totalHours = unplannedAbs.reduce((s, a) => s + (a.durationHours || 0), 0);
 
-    // By day (for calendar)
+    // By day (for calendar) — unplanned only
     const byDay = new Map();
-    absences.forEach(a => {
+    unplannedAbs.forEach(a => {
       byDay.set(a.date, (byDay.get(a.date) || 0) + 1);
     });
 
@@ -98,9 +101,9 @@ export function MonthlyView({ plantFilter }) {
       momLabel = `${pct > 0 ? '+' : ''}${pct}% vs last month`;
     }
 
-    // Plant breakdown for horizontal bar chart
+    // Plant breakdown (unplanned only) for the By Plant donut
     const byPlant = {};
-    absences.forEach(a => { byPlant[a.plantId] = (byPlant[a.plantId] || 0) + 1; });
+    unplannedAbs.forEach(a => { byPlant[a.plantId] = (byPlant[a.plantId] || 0) + 1; });
 
     // Daily bar chart data
     const daysInMonth = new Date(year, month + 1, 0).getDate();
@@ -131,7 +134,7 @@ export function MonthlyView({ plantFilter }) {
       }));
 
     return {
-      total, planned, unplanned, direct, indirect, shift1, shift2,
+      planned, unplanned, direct, indirect, shift1, shift2,
       avgPerDay, totalHours, peakLabel, momLabel,
       byDay, dailyBars,
       plantSegments,
@@ -322,7 +325,7 @@ export function MonthlyView({ plantFilter }) {
             <div className={styles.chartCard}>
               <div className={styles.cardHeader}>By Plant</div>
               <div className={styles.cardBody}>
-                <DonutChart segments={data.plantSegments} centerText={String(data.total)} />
+                <DonutChart segments={data.plantSegments} centerText={String(data.unplanned)} />
               </div>
             </div>
           </div>
@@ -336,7 +339,7 @@ export function MonthlyView({ plantFilter }) {
                     { label: 'Direct',   value: data.direct,   color: '#1e40af' },
                     { label: 'Indirect', value: data.indirect, color: '#d97706' },
                   ]}
-                  centerText={String(data.total)}
+                  centerText={String(data.unplanned)}
                 />
               </div>
             </div>
@@ -349,7 +352,7 @@ export function MonthlyView({ plantFilter }) {
                     { label: '1st Shift', value: data.shift1, color: '#065f46' },
                     { label: '2nd Shift', value: data.shift2, color: '#7c3aed' },
                   ]}
-                  centerText={String(data.total)}
+                  centerText={String(data.unplanned)}
                 />
               </div>
             </div>

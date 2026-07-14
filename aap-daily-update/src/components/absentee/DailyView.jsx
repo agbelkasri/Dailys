@@ -48,15 +48,17 @@ export function DailyView({ plantFilter }) {
     return all;
   }, [staffingByPlant, plantFilter, selectedDate, holidays]);
 
+  // HR's headline metric is UNPLANNED absenteeism — every count card here
+  // uses unplanned only, except the card explicitly labeled "Planned".
   const stats = useMemo(() => {
-    const total      = parsedAbsences.length;
+    const unplannedAbs = parsedAbsences.filter(a => a.type === 'unplanned');
     const planned    = parsedAbsences.filter(a => a.type === 'planned').length;
-    const unplanned  = parsedAbsences.filter(a => a.type === 'unplanned').length;
-    const direct     = parsedAbsences.filter(a => a.laborType === 'direct').length;
-    const indirect   = parsedAbsences.filter(a => a.laborType === 'indirect').length;
-    const plants     = new Set(parsedAbsences.map(a => a.plantId)).size;
-    const totalHours = parsedAbsences.reduce((s, a) => s + (a.durationHours || 0), 0);
-    return { total, planned, unplanned, direct, indirect, plants, totalHours };
+    const unplanned  = unplannedAbs.length;
+    const direct     = unplannedAbs.filter(a => a.laborType === 'direct').length;
+    const indirect   = unplannedAbs.filter(a => a.laborType === 'indirect').length;
+    const plants     = new Set(unplannedAbs.map(a => a.plantId)).size;
+    const totalHours = unplannedAbs.reduce((s, a) => s + (a.durationHours || 0), 0);
+    return { planned, unplanned, direct, indirect, plants, totalHours };
   }, [parsedAbsences]);
 
   // ── Absenteeism % of full-time direct-labor workforce ────────────────────
