@@ -63,15 +63,24 @@ export function YearlyView({ plantFilter }) {
     const pct  = (n) => dlPersonDays  > 0 ? ((n / dlPersonDays)  * 100).toFixed(1) + '%' : '—';
     const ipct = (n) => idlPersonDays > 0 ? ((n / idlPersonDays) * 100).toFixed(1) + '%' : '—';
 
+    // Combined workforce (DL + IDL shifts) — drives the Total/Planned %
+    // cards. The hero already splits by labor type, so the Total card
+    // aggregates across BOTH pools or it would just repeat the DL half.
+    const combinedShifts    = dlPersonDays + idlPersonDays;
+    const cpct = (n) => combinedShifts > 0 ? ((n / combinedShifts) * 100).toFixed(1) + '%' : '—';
+    const combinedUnplanned = dlUnplanned + idlUnplanned;
+    const combinedPlanned   = dlPlanned + idlPlanned;
+
     return {
       personDays:    dlPersonDays,
       idlPersonDays,
       daysCounted:   dlDaysCounted,
       dlPlanned, dlUnplanned, dlTotal,
       idlPlanned, idlUnplanned, idlTotal,
-      totalPct:     pct(dlTotal),
-      plannedPct:   pct(dlPlanned),
-      unplannedPct: pct(dlUnplanned),
+      // Combined DL+IDL — the small Total/Planned % cards below the hero
+      combinedShifts, combinedUnplanned, combinedPlanned,
+      totalPct:     cpct(combinedUnplanned),
+      plannedPct:   cpct(combinedPlanned),
       // Headline DL vs IDL hero — HR tracks UNPLANNED absenteeism, so the
       // hero shows each labor type's unplanned rate over its person-days.
       dlRatePct:    pct(dlUnplanned),
@@ -154,7 +163,7 @@ export function YearlyView({ plantFilter }) {
             <div className={styles.rateHeaderText}>
               Year-to-date absenteeism rate — {scopeLabel}
               <span className={styles.rateDenominator}>
-                {' '}({rate.dlUnplanned} unplanned absences out of {rate.personDays || '—'} shifts
+                {' '}({rate.combinedUnplanned} unplanned absences out of {rate.combinedShifts || '—'} shifts
                 across {rate.daysCounted} day{rate.daysCounted !== 1 ? 's' : ''})
               </span>
             </div>
@@ -180,18 +189,18 @@ export function YearlyView({ plantFilter }) {
             </div>
           </div>
 
-          {/* Total (unplanned) / Planned (DL-relative) */}
+          {/* Total (unplanned) / Planned — combined DL + IDL workforce */}
           <StatsGrid>
             <StatsCard
               label="Total Absenteeism %"
-              value={rate.unplannedPct}
-              sub={`${rate.dlUnplanned} absences out of ${rate.personDays || '—'} shifts`}
+              value={rate.totalPct}
+              sub={`${rate.combinedUnplanned} of ${rate.combinedShifts || '—'} shifts (DL + IDL)`}
               accent="#1a3a5c"
             />
             <StatsCard
               label="Planned %"
               value={rate.plannedPct}
-              sub={`${rate.dlPlanned} absences out of ${rate.personDays || '—'} shifts`}
+              sub={`${rate.combinedPlanned} of ${rate.combinedShifts || '—'} shifts (DL + IDL)`}
               accent="#2563eb"
             />
           </StatsGrid>

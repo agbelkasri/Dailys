@@ -111,15 +111,23 @@ export function DailyView({ plantFilter }) {
     const pct  = (n) => dlHeadcount  > 0 ? ((n / dlHeadcount)  * 100).toFixed(1) + '%' : '—';
     const ipct = (n) => idlHeadcount > 0 ? ((n / idlHeadcount) * 100).toFixed(1) + '%' : '—';
 
+    // Combined workforce (DL + IDL) — drives the Total/Planned % cards.
+    // The hero already splits by labor type, so the Total card aggregates
+    // across BOTH pools or it would just repeat the hero's DL half.
+    const combinedHeadcount = dlHeadcount + idlHeadcount;
+    const cpct = (n) => combinedHeadcount > 0 ? ((n / combinedHeadcount) * 100).toFixed(1) + '%' : '—';
+    const combinedUnplanned = dlUnplanned + idlUnplanned;
+    const combinedPlanned   = dlPlanned + idlPlanned;
+
     return {
       headcount:    dlHeadcount,
       idlHeadcount,
       dlPlanned, dlUnplanned, dlTotal,
       idlPlanned, idlUnplanned, idlTotal,
-      // DL-relative (used by the small Total/Planned cards below)
-      totalPct:     pct(dlTotal),
-      plannedPct:   pct(dlPlanned),
-      unplannedPct: pct(dlUnplanned),
+      // Combined DL+IDL — the small Total/Planned % cards below the hero
+      combinedHeadcount, combinedUnplanned, combinedPlanned,
+      totalPct:     cpct(combinedUnplanned),
+      plannedPct:   cpct(combinedPlanned),
       // Headline DL vs IDL card — HR tracks UNPLANNED absenteeism, so the
       // hero shows each labor type's unplanned rate against its workforce.
       dlRatePct:    pct(dlUnplanned),
@@ -173,9 +181,9 @@ export function DailyView({ plantFilter }) {
       <div className={styles.rateHeader}>
         <div className={styles.rateHeaderText}>
           Absenteeism rate — {scopeLabel}
-          {rate.headcount > 0 && (
+          {rate.combinedHeadcount > 0 && (
             <span className={styles.rateDenominator}>
-              {' '}({rate.dlUnplanned} unplanned of {rate.headcount} FT DL workers)
+              {' '}({rate.combinedUnplanned} unplanned of {rate.combinedHeadcount} workers)
             </span>
           )}
         </div>
@@ -213,14 +221,14 @@ export function DailyView({ plantFilter }) {
       <StatsGrid>
         <StatsCard
           label="Total Absenteeism %"
-          value={rate.unplannedPct}
-          sub={`${rate.dlUnplanned} of ${rate.headcount || '—'} FT DL`}
+          value={rate.totalPct}
+          sub={`${rate.combinedUnplanned} of ${rate.combinedHeadcount || '—'} workers (DL + IDL)`}
           accent="#1a3a5c"
         />
         <StatsCard
           label="Planned %"
           value={rate.plannedPct}
-          sub={`${rate.dlPlanned} of ${rate.headcount || '—'} FT DL`}
+          sub={`${rate.combinedPlanned} of ${rate.combinedHeadcount || '—'} workers (DL + IDL)`}
           accent="#2563eb"
         />
       </StatsGrid>
