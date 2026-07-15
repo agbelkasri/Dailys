@@ -196,3 +196,44 @@
   .dlIdlDivider { width: auto; height: 1px; margin: 6px 24px; }
   .dlIdlPct { font-size: 40px; }
 }
+
+/* ── Total Absenteeism headline (full-width, above the DL/IDL split) ── */
+.totalHero {
+  background: var(--bg-surface);
+  border: 1px solid var(--border-default);
+  border-top: 4px solid var(--plant-primary);
+  border-radius: 12px;
+  box-shadow: 0 2px 10px var(--shadow-md);
+  padding: 24px 28px;
+  margin-bottom: 16px;
+  text-align: center;
+}
+
+.totalHeroPct {
+  font-size: 64px;
+  font-weight: 800;
+  line-height: 1;
+  color: var(--plant-primary-text);
+  letter-spacing: -0.02em;
+  font-variant-numeric: tabular-nums;
+}
+
+.totalHeroLabel {
+  font-size: 13px;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+  color: var(--text-heading);
+  margin-top: 10px;
+}
+
+.totalHeroSub {
+  font-size: 12px;
+  color: var(--text-muted);
+  margin-top: 4px;
+}
+
+@media (max-width: 520px) {
+  .totalHero { padding: 18px 16px; }
+  .totalHeroPct { font-size: 48px; }
+}

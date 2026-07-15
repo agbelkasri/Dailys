@@ -254,7 +254,16 @@ export function MonthlyView({ plantFilter }) {
             </div>
           )}
 
-          {/* Direct vs Indirect Labor — headline card. HR tracks UNPLANNED
+          {/* Total Absenteeism — full-width headline over the DL/IDL split. */}
+          <div className={styles.totalHero}>
+            <div className={styles.totalHeroPct}>{rate.totalPct}</div>
+            <div className={styles.totalHeroLabel}>Total Absenteeism</div>
+            <div className={styles.totalHeroSub}>
+              {rate.combinedUnplanned} of {rate.combinedShifts || '—'} shifts (DL + IDL)
+            </div>
+          </div>
+
+          {/* Direct vs Indirect Labor breakdown. HR tracks UNPLANNED
               absenteeism, so each side shows the unplanned rate against its
               own workforce — sum of scheduled shifts across every weekday
               in the month that has a headcount line. */}
@@ -275,15 +284,6 @@ export function MonthlyView({ plantFilter }) {
               </div>
             </div>
           </div>
-
-          <StatsGrid>
-            <StatsCard
-              label="Total Absenteeism %"
-              value={rate.totalPct}
-              sub={`${rate.combinedUnplanned} of ${rate.combinedShifts || '—'} shifts (DL + IDL)`}
-              accent="#1a3a5c"
-            />
-          </StatsGrid>
 
           {/* Stats */}
           <StatsGrid>

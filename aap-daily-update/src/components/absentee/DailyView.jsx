@@ -200,7 +200,16 @@ export function DailyView({ plantFilter }) {
         </div>
       )}
 
-      {/* Direct vs Indirect Labor — headline card. HR tracks UNPLANNED
+      {/* Total Absenteeism — full-width headline over the DL/IDL split. */}
+      <div className={styles.totalHero}>
+        <div className={styles.totalHeroPct}>{rate.totalPct}</div>
+        <div className={styles.totalHeroLabel}>Total Absenteeism</div>
+        <div className={styles.totalHeroSub}>
+          {rate.combinedUnplanned} of {rate.combinedHeadcount || '—'} workers (DL + IDL)
+        </div>
+      </div>
+
+      {/* Direct vs Indirect Labor breakdown. HR tracks UNPLANNED
           absenteeism, so each side shows the unplanned rate against its
           own workforce headcount (DL or IDL). */}
       <div className={styles.dlIdlHero}>
@@ -220,15 +229,6 @@ export function DailyView({ plantFilter }) {
           </div>
         </div>
       </div>
-
-      <StatsGrid>
-        <StatsCard
-          label="Total Absenteeism %"
-          value={rate.totalPct}
-          sub={`${rate.combinedUnplanned} of ${rate.combinedHeadcount || '—'} workers (DL + IDL)`}
-          accent="#1a3a5c"
-        />
-      </StatsGrid>
 
       {/* Raw counts — still useful for daily ops */}
       <StatsGrid>

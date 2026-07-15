@@ -4,7 +4,6 @@ import { useYearlyStaffing } from '../../hooks/useYearlyStaffing';
 import { useHolidays } from '../../hooks/useHolidays';
 import { isHoliday } from '../../utils/holidays';
 import { parseStaffingIssues, parseStaffingHeadcount } from '../../utils/parseStaffingIssues';
-import { StatsCard, StatsGrid } from './StatsCard';
 import { LineChart } from './charts/LineChart';
 import styles from './YearlyView.module.css';
 
@@ -167,7 +166,16 @@ export function YearlyView({ plantFilter }) {
             </div>
           </div>
 
-          {/* Direct vs Indirect Labor — headline card. HR tracks UNPLANNED
+          {/* Total Absenteeism — full-width headline over the DL/IDL split. */}
+          <div className={styles.totalHero}>
+            <div className={styles.totalHeroPct}>{rate.totalPct}</div>
+            <div className={styles.totalHeroLabel}>Total Absenteeism</div>
+            <div className={styles.totalHeroSub}>
+              {rate.combinedUnplanned} of {rate.combinedShifts || '—'} shifts (DL + IDL)
+            </div>
+          </div>
+
+          {/* Direct vs Indirect Labor breakdown. HR tracks UNPLANNED
               absenteeism, so each side shows the unplanned rate. */}
           <div className={styles.dlIdlHero}>
             <div className={styles.dlIdlHalf}>
@@ -186,16 +194,6 @@ export function YearlyView({ plantFilter }) {
               </div>
             </div>
           </div>
-
-          {/* Total — combined DL + IDL workforce */}
-          <StatsGrid>
-            <StatsCard
-              label="Total Absenteeism %"
-              value={rate.totalPct}
-              sub={`${rate.combinedUnplanned} of ${rate.combinedShifts || '—'} shifts (DL + IDL)`}
-              accent="#1a3a5c"
-            />
-          </StatsGrid>
 
           {/* Monthly trend — DL and IDL on the same axes */}
           {trend.labels.length > 0 && (
