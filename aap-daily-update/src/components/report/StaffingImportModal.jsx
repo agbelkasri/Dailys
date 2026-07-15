@@ -1,7 +1,6 @@
 import { useState } from 'react';
 import { addAbsence } from '../../services/absenceService';
 import {
-  ABSENCE_TYPES,
   LABOR_TYPES,
   SHIFTS,
   DURATIONS,
@@ -83,7 +82,6 @@ export function StaffingImportModal({ entries: initialEntries, plantId, date, on
               <thead>
                 <tr>
                   <th className={styles.colName}>Employee Name</th>
-                  <th className={styles.colType}>Type</th>
                   <th className={styles.colLabor}>Labor</th>
                   <th className={styles.colShift}>Shift</th>
                   <th className={styles.colDur}>Duration</th>
@@ -102,18 +100,8 @@ export function StaffingImportModal({ entries: initialEntries, plantId, date, on
                         disabled={saving}
                       />
                     </td>
-                    <td className={styles.colType}>
-                      <select
-                        className={styles.select}
-                        value={entry.type}
-                        onChange={e => updateEntry(idx, 'type', e.target.value)}
-                        disabled={saving}
-                      >
-                        {ABSENCE_TYPES.map(t => (
-                          <option key={t.value} value={t.value}>{t.label}</option>
-                        ))}
-                      </select>
-                    </td>
+                    {/* entry.type (parsed from the Planned/Unplanned headers)
+                        is still saved with the record — just not shown. */}
                     <td className={styles.colLabor}>
                       <select
                         className={styles.select}

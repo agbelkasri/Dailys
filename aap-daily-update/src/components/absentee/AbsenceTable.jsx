@@ -7,7 +7,6 @@ const PLANT_MAP = Object.fromEntries(PLANTS.map(p => [p.id, p.name]));
 const COLUMNS = [
   { key: 'employeeName', label: 'Employee' },
   { key: 'plantId',      label: 'Plant' },
-  { key: 'type',         label: 'Type' },
   { key: 'laborType',    label: 'Labor' },
   { key: 'shift',        label: 'Shift' },
   { key: 'duration',     label: 'Duration' },
@@ -70,14 +69,9 @@ export function AbsenceTable({ absences, onEdit, onDelete, readOnly = false }) {
           </thead>
           <tbody>
             {sorted.map(a => (
-              <tr key={a.id} className={`${styles.row} ${a.type === 'unplanned' ? styles.rowUnplanned : ''}`}>
+              <tr key={a.id} className={styles.row}>
                 <td className={styles.td}><strong>{a.employeeName}</strong></td>
                 <td className={styles.td}>{PLANT_MAP[a.plantId] || a.plantId}</td>
-                <td className={styles.td}>
-                  <span className={`${styles.badge} ${a.type === 'planned' ? styles.badgePlanned : styles.badgeUnplanned}`}>
-                    {a.type === 'planned' ? 'Planned' : 'Unplanned'}
-                  </span>
-                </td>
                 <td className={styles.td}>
                   <span className={`${styles.badge} ${a.laborType === 'indirect' ? styles.badgeIndirect : styles.badgeDirect}`}>
                     {a.laborType === 'indirect' ? 'Indirect' : 'Direct'}

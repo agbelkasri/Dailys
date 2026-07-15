@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { PLANTS, ABSENCE_TYPES, LABOR_TYPES, SHIFTS, DURATIONS, EMPLOYMENT_TYPES, getHoursForDuration } from '../../constants/absences';
+import { PLANTS, LABOR_TYPES, SHIFTS, DURATIONS, EMPLOYMENT_TYPES, getHoursForDuration } from '../../constants/absences';
 import { updateAbsence } from '../../services/absenceService';
 import styles from './AbsenceFormModal.module.css';
 
@@ -8,6 +8,8 @@ export function AbsenceFormModal({ absence, onClose }) {
     employeeName: absence.employeeName || '',
     plantId: absence.plantId || 'GAP',
     date: absence.date || '',
+    // `type` is no longer user-facing but is preserved on save so the
+    // record keeps its backend classification.
     type: absence.type || 'unplanned',
     employmentType: absence.employmentType || 'full_time',
     absenceTerm: absence.absenceTerm || 'short_term',
@@ -81,17 +83,6 @@ export function AbsenceFormModal({ absence, onClose }) {
             <div className={styles.group}>
               <label className={styles.label}>Date *</label>
               <input className={styles.input} type="date" name="date" value={form.date} onChange={handleChange} />
-            </div>
-            <div className={styles.group}>
-              <label className={styles.label}>Type *</label>
-              <div className={styles.radioGroup}>
-                {ABSENCE_TYPES.map(t => (
-                  <label key={t.value} className={styles.radio}>
-                    <input type="radio" name="type" value={t.value} checked={form.type === t.value} onChange={handleChange} />
-                    {t.label}
-                  </label>
-                ))}
-              </div>
             </div>
           </div>
 

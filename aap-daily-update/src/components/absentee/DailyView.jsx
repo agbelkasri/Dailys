@@ -22,8 +22,12 @@ export function DailyView({ plantFilter }) {
           loading: staffingLoading }              = useStaffingByPlant(selectedDate, plantFilter);
   const holidays = useHolidays();
 
-  const filtered = useMemo(() =>
-    plantFilter ? absences.filter(a => a.plantId === plantFilter) : absences,
+  // The editable table shows unplanned absences only — planned is no longer
+  // a user-facing classification (the record's type is kept in Firestore).
+  const filtered = useMemo(() => {
+    const unplannedOnly = absences.filter(a => a.type !== 'planned');
+    return plantFilter ? unplannedOnly.filter(a => a.plantId === plantFilter) : unplannedOnly;
+  },
     [absences, plantFilter]
   );
 
@@ -52,13 +56,12 @@ export function DailyView({ plantFilter }) {
   // uses unplanned only, except the card explicitly labeled "Planned".
   const stats = useMemo(() => {
     const unplannedAbs = parsedAbsences.filter(a => a.type === 'unplanned');
-    const planned    = parsedAbsences.filter(a => a.type === 'planned').length;
     const unplanned  = unplannedAbs.length;
     const direct     = unplannedAbs.filter(a => a.laborType === 'direct').length;
     const indirect   = unplannedAbs.filter(a => a.laborType === 'indirect').length;
     const plants     = new Set(unplannedAbs.map(a => a.plantId)).size;
     const totalHours = unplannedAbs.reduce((s, a) => s + (a.durationHours || 0), 0);
-    return { planned, unplanned, direct, indirect, plants, totalHours };
+    return { unplanned, direct, indirect, plants, totalHours };
   }, [parsedAbsences]);
 
   // ── Absenteeism % of full-time direct-labor workforce ────────────────────
@@ -113,23 +116,21 @@ export function DailyView({ plantFilter }) {
     const pct  = (n) => dlHeadcount  > 0 ? ((n / dlHeadcount)  * 100).toFixed(1) + '%' : '—';
     const ipct = (n) => idlHeadcount > 0 ? ((n / idlHeadcount) * 100).toFixed(1) + '%' : '—';
 
-    // Combined workforce (DL + IDL) — drives the Total/Planned % cards.
+    // Combined workforce (DL + IDL) — drives the Total Absenteeism % card.
     // The hero already splits by labor type, so the Total card aggregates
     // across BOTH pools or it would just repeat the hero's DL half.
     const combinedHeadcount = dlHeadcount + idlHeadcount;
     const cpct = (n) => combinedHeadcount > 0 ? ((n / combinedHeadcount) * 100).toFixed(1) + '%' : '—';
     const combinedUnplanned = dlUnplanned + idlUnplanned;
-    const combinedPlanned   = dlPlanned + idlPlanned;
 
     return {
       headcount:    dlHeadcount,
       idlHeadcount,
       dlPlanned, dlUnplanned, dlTotal,
       idlPlanned, idlUnplanned, idlTotal,
-      // Combined DL+IDL — the small Total/Planned % cards below the hero
-      combinedHeadcount, combinedUnplanned, combinedPlanned,
+      // Combined DL+IDL — the Total Absenteeism % card below the hero
+      combinedHeadcount, combinedUnplanned,
       totalPct:     cpct(combinedUnplanned),
-      plannedPct:   cpct(combinedPlanned),
       // Headline DL vs IDL card — HR tracks UNPLANNED absenteeism, so the
       // hero shows each labor type's unplanned rate against its workforce.
       dlRatePct:    pct(dlUnplanned),
@@ -185,7 +186,7 @@ export function DailyView({ plantFilter }) {
           Absenteeism rate — {scopeLabel}
           {rate.combinedHeadcount > 0 && (
             <span className={styles.rateDenominator}>
-              {' '}({rate.combinedUnplanned} unplanned of {rate.combinedHeadcount} workers)
+              {' '}({rate.combinedUnplanned} of {rate.combinedHeadcount} workers)
             </span>
           )}
         </div>
@@ -207,7 +208,7 @@ export function DailyView({ plantFilter }) {
           <div className={styles.dlIdlPct}>{rate.dlRatePct}</div>
           <div className={styles.dlIdlLabel}>Direct Labor</div>
           <div className={styles.dlIdlSub}>
-            {rate.dlUnplanned} unplanned of {rate.headcount || '—'} DL workers
+            {rate.dlUnplanned} of {rate.headcount || '—'} DL workers
           </div>
         </div>
         <div className={styles.dlIdlDivider} aria-hidden="true" />
@@ -215,7 +216,7 @@ export function DailyView({ plantFilter }) {
           <div className={styles.dlIdlPct}>{rate.idlRatePct}</div>
           <div className={styles.dlIdlLabel}>Indirect Labor</div>
           <div className={styles.dlIdlSub}>
-            {rate.idlUnplanned} unplanned of {rate.idlHeadcount || '—'} IDL workers
+            {rate.idlUnplanned} of {rate.idlHeadcount || '—'} IDL workers
           </div>
         </div>
       </div>
@@ -227,18 +228,11 @@ export function DailyView({ plantFilter }) {
           sub={`${rate.combinedUnplanned} of ${rate.combinedHeadcount || '—'} workers (DL + IDL)`}
           accent="#1a3a5c"
         />
-        <StatsCard
-          label="Planned %"
-          value={rate.plannedPct}
-          sub={`${rate.combinedPlanned} of ${rate.combinedHeadcount || '—'} workers (DL + IDL)`}
-          accent="#2563eb"
-        />
       </StatsGrid>
 
       {/* Raw counts — still useful for daily ops */}
       <StatsGrid>
         <StatsCard label="Total Absences" value={stats.unplanned} accent="#1a3a5c" />
-        <StatsCard label="Planned"        value={stats.planned}   accent="#2563eb" />
         <StatsCard label="Direct Labor"   value={stats.direct}    accent="#16a34a" />
         <StatsCard label="Indirect Labor" value={stats.indirect}  accent="#d97706" />
         <StatsCard label="Plants Affected" value={stats.plants}   accent="#7c3aed" />

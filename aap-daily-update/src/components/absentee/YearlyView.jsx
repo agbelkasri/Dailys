@@ -63,13 +63,12 @@ export function YearlyView({ plantFilter }) {
     const pct  = (n) => dlPersonDays  > 0 ? ((n / dlPersonDays)  * 100).toFixed(1) + '%' : '—';
     const ipct = (n) => idlPersonDays > 0 ? ((n / idlPersonDays) * 100).toFixed(1) + '%' : '—';
 
-    // Combined workforce (DL + IDL shifts) — drives the Total/Planned %
-    // cards. The hero already splits by labor type, so the Total card
+    // Combined workforce (DL + IDL shifts) — drives the Total Absenteeism %
+    // card. The hero already splits by labor type, so the Total card
     // aggregates across BOTH pools or it would just repeat the DL half.
     const combinedShifts    = dlPersonDays + idlPersonDays;
     const cpct = (n) => combinedShifts > 0 ? ((n / combinedShifts) * 100).toFixed(1) + '%' : '—';
     const combinedUnplanned = dlUnplanned + idlUnplanned;
-    const combinedPlanned   = dlPlanned + idlPlanned;
 
     return {
       personDays:    dlPersonDays,
@@ -77,10 +76,9 @@ export function YearlyView({ plantFilter }) {
       daysCounted:   dlDaysCounted,
       dlPlanned, dlUnplanned, dlTotal,
       idlPlanned, idlUnplanned, idlTotal,
-      // Combined DL+IDL — the small Total/Planned % cards below the hero
-      combinedShifts, combinedUnplanned, combinedPlanned,
+      // Combined DL+IDL — the Total Absenteeism % card below the hero
+      combinedShifts, combinedUnplanned,
       totalPct:     cpct(combinedUnplanned),
-      plannedPct:   cpct(combinedPlanned),
       // Headline DL vs IDL hero — HR tracks UNPLANNED absenteeism, so the
       // hero shows each labor type's unplanned rate over its person-days.
       dlRatePct:    pct(dlUnplanned),
@@ -163,7 +161,7 @@ export function YearlyView({ plantFilter }) {
             <div className={styles.rateHeaderText}>
               Year-to-date absenteeism rate — {scopeLabel}
               <span className={styles.rateDenominator}>
-                {' '}({rate.combinedUnplanned} unplanned absences out of {rate.combinedShifts || '—'} shifts
+                {' '}({rate.combinedUnplanned} absences out of {rate.combinedShifts || '—'} shifts
                 across {rate.daysCounted} day{rate.daysCounted !== 1 ? 's' : ''})
               </span>
             </div>
@@ -176,7 +174,7 @@ export function YearlyView({ plantFilter }) {
               <div className={styles.dlIdlPct}>{rate.dlRatePct}</div>
               <div className={styles.dlIdlLabel}>Direct Labor</div>
               <div className={styles.dlIdlSub}>
-                {rate.dlUnplanned} unplanned of {rate.personDays || '—'} shifts
+                {rate.dlUnplanned} of {rate.personDays || '—'} shifts
               </div>
             </div>
             <div className={styles.dlIdlDivider} aria-hidden="true" />
@@ -184,12 +182,12 @@ export function YearlyView({ plantFilter }) {
               <div className={styles.dlIdlPct}>{rate.idlRatePct}</div>
               <div className={styles.dlIdlLabel}>Indirect Labor</div>
               <div className={styles.dlIdlSub}>
-                {rate.idlUnplanned} unplanned of {rate.idlPersonDays || '—'} shifts
+                {rate.idlUnplanned} of {rate.idlPersonDays || '—'} shifts
               </div>
             </div>
           </div>
 
-          {/* Total (unplanned) / Planned — combined DL + IDL workforce */}
+          {/* Total — combined DL + IDL workforce */}
           <StatsGrid>
             <StatsCard
               label="Total Absenteeism %"
@@ -197,19 +195,13 @@ export function YearlyView({ plantFilter }) {
               sub={`${rate.combinedUnplanned} of ${rate.combinedShifts || '—'} shifts (DL + IDL)`}
               accent="#1a3a5c"
             />
-            <StatsCard
-              label="Planned %"
-              value={rate.plannedPct}
-              sub={`${rate.combinedPlanned} of ${rate.combinedShifts || '—'} shifts (DL + IDL)`}
-              accent="#2563eb"
-            />
           </StatsGrid>
 
           {/* Monthly trend — DL and IDL on the same axes */}
           {trend.labels.length > 0 && (
             <div className={styles.chartCard}>
               <div className={styles.cardHeader}>
-                Monthly Unplanned Absenteeism % — Direct vs Indirect Labor
+                Monthly Absenteeism % — Direct vs Indirect Labor
               </div>
               <div className={styles.cardBody}>
                 <LineChart

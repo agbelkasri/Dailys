@@ -71,7 +71,6 @@ export function MonthlyView({ plantFilter }) {
   // the stacked daily bar).
   const data = useMemo(() => {
     const unplannedAbs = absences.filter(a => a.type === 'unplanned');
-    const planned   = absences.filter(a => a.type === 'planned').length;
     const unplanned = unplannedAbs.length;
     const direct    = unplannedAbs.filter(a => (a.laborType || 'direct') === 'direct').length;
     const indirect  = unplannedAbs.filter(a => a.laborType === 'indirect').length;
@@ -105,20 +104,17 @@ export function MonthlyView({ plantFilter }) {
     const byPlant = {};
     unplannedAbs.forEach(a => { byPlant[a.plantId] = (byPlant[a.plantId] || 0) + 1; });
 
-    // Daily bar chart data
+    // Daily bar chart data — unplanned only
     const daysInMonth = new Date(year, month + 1, 0).getDate();
     const dailyBars = [];
     for (let d = 1; d <= daysInMonth; d++) {
       const mm = String(month + 1).padStart(2, '0');
       const dd = String(d).padStart(2, '0');
       const dateStr = `${year}-${mm}-${dd}`;
-      const dayAbs = absences.filter(a => a.date === dateStr);
-      const p = dayAbs.filter(a => a.type === 'planned').length;
-      const u = dayAbs.filter(a => a.type === 'unplanned').length;
+      const u = unplannedAbs.filter(a => a.date === dateStr).length;
       dailyBars.push({
         label: d % 5 === 1 || d === daysInMonth ? String(d) : '',
         segments: [
-          { value: p, color: '#2563eb' },
           { value: u, color: '#ef4444' },
         ],
       });
@@ -134,7 +130,7 @@ export function MonthlyView({ plantFilter }) {
       }));
 
     return {
-      planned, unplanned, direct, indirect, shift1, shift2,
+      unplanned, direct, indirect, shift1, shift2,
       avgPerDay, totalHours, peakLabel, momLabel,
       byDay, dailyBars,
       plantSegments,
@@ -191,13 +187,12 @@ export function MonthlyView({ plantFilter }) {
     const pct  = (n) => dlPersonDays  > 0 ? ((n / dlPersonDays)  * 100).toFixed(1) + '%' : '—';
     const ipct = (n) => idlPersonDays > 0 ? ((n / idlPersonDays) * 100).toFixed(1) + '%' : '—';
 
-    // Combined workforce (DL + IDL shifts) — drives the Total/Planned %
-    // cards. The hero already splits by labor type, so the Total card
+    // Combined workforce (DL + IDL shifts) — drives the Total Absenteeism %
+    // card. The hero already splits by labor type, so the Total card
     // aggregates across BOTH pools or it would just repeat the DL half.
     const combinedShifts    = dlPersonDays + idlPersonDays;
     const cpct = (n) => combinedShifts > 0 ? ((n / combinedShifts) * 100).toFixed(1) + '%' : '—';
     const combinedUnplanned = dlUnplanned + idlUnplanned;
-    const combinedPlanned   = dlPlanned + idlPlanned;
 
     return {
       personDays:    dlPersonDays,
@@ -205,10 +200,9 @@ export function MonthlyView({ plantFilter }) {
       daysCounted:   dlDaysCounted,
       dlPlanned, dlUnplanned, dlTotal,
       idlPlanned, idlUnplanned, idlTotal,
-      // Combined DL+IDL — the small Total/Planned % cards below the hero
-      combinedShifts, combinedUnplanned, combinedPlanned,
+      // Combined DL+IDL — the Total Absenteeism % card below the hero
+      combinedShifts, combinedUnplanned,
       totalPct:     cpct(combinedUnplanned),
-      plannedPct:   cpct(combinedPlanned),
       // Headline DL vs IDL hero — HR tracks UNPLANNED absenteeism, so the
       // hero shows each labor type's unplanned rate over its person-days.
       dlRatePct:    pct(dlUnplanned),
@@ -244,7 +238,7 @@ export function MonthlyView({ plantFilter }) {
               Monthly absenteeism rate — {plantFilter || 'all plants'}
               {rate.combinedShifts > 0 && (
                 <span className={styles.rateDenominator}>
-                  {' '}({rate.combinedUnplanned} unplanned absences out of {rate.combinedShifts} shifts
+                  {' '}({rate.combinedUnplanned} absences out of {rate.combinedShifts} shifts
                   across {rate.daysCounted} day{rate.daysCounted !== 1 ? 's' : ''})
                 </span>
               )}
@@ -269,7 +263,7 @@ export function MonthlyView({ plantFilter }) {
               <div className={styles.dlIdlPct}>{rate.dlRatePct}</div>
               <div className={styles.dlIdlLabel}>Direct Labor</div>
               <div className={styles.dlIdlSub}>
-                {rate.dlUnplanned} unplanned of {rate.personDays || '—'} shifts
+                {rate.dlUnplanned} of {rate.personDays || '—'} shifts
               </div>
             </div>
             <div className={styles.dlIdlDivider} aria-hidden="true" />
@@ -277,7 +271,7 @@ export function MonthlyView({ plantFilter }) {
               <div className={styles.dlIdlPct}>{rate.idlRatePct}</div>
               <div className={styles.dlIdlLabel}>Indirect Labor</div>
               <div className={styles.dlIdlSub}>
-                {rate.idlUnplanned} unplanned of {rate.idlPersonDays || '—'} shifts
+                {rate.idlUnplanned} of {rate.idlPersonDays || '—'} shifts
               </div>
             </div>
           </div>
@@ -289,18 +283,11 @@ export function MonthlyView({ plantFilter }) {
               sub={`${rate.combinedUnplanned} of ${rate.combinedShifts || '—'} shifts (DL + IDL)`}
               accent="#1a3a5c"
             />
-            <StatsCard
-              label="Planned %"
-              value={rate.plannedPct}
-              sub={`${rate.combinedPlanned} of ${rate.combinedShifts || '—'} shifts (DL + IDL)`}
-              accent="#2563eb"
-            />
           </StatsGrid>
 
           {/* Stats */}
           <StatsGrid>
             <StatsCard label="Total Absences" value={data.unplanned}  accent="#1a3a5c" sub={data.momLabel} />
-            <StatsCard label="Planned"        value={data.planned}    accent="#2563eb" />
             <StatsCard label="Direct Labor"   value={data.direct}     accent="#16a34a" />
             <StatsCard label="Indirect Labor" value={data.indirect}  accent="#d97706" />
             <StatsCard label="1st Shift"      value={data.shift1}    accent="#0891b2" />

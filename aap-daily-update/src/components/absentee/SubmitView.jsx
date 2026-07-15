@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { PLANTS, ABSENCE_TYPES, LABOR_TYPES, SHIFTS, DURATIONS, EMPLOYMENT_TYPES, getHoursForDuration } from '../../constants/absences';
+import { PLANTS, LABOR_TYPES, SHIFTS, DURATIONS, EMPLOYMENT_TYPES, getHoursForDuration } from '../../constants/absences';
 import { addAbsence } from '../../services/absenceService';
 import { getTodayDate } from '../../hooks/useDateNavigation';
 import styles from './SubmitView.module.css';
@@ -8,6 +8,8 @@ const EMPTY_FORM = {
   employeeName: '',
   plantId: 'GAP',
   date: getTodayDate(),
+  // `type` is no longer user-facing but is still written to Firestore
+  // (rules require it; the UI counts only unplanned absences).
   type: 'unplanned',
   employmentType: 'full_time',
   absenceTerm: 'short_term',
@@ -93,20 +95,6 @@ export function SubmitView({ onSuccess, prefill = null }) {
             <input className={styles.input} type="date" name="date" value={form.date} onChange={handleChange} />
           </div>
           <div className={styles.group}>
-            <label className={styles.label}>Type *</label>
-            <div className={styles.radioGroup}>
-              {ABSENCE_TYPES.map(t => (
-                <label key={t.value} className={styles.radio}>
-                  <input type="radio" name="type" value={t.value} checked={form.type === t.value} onChange={handleChange} />
-                  {t.label}
-                </label>
-              ))}
-            </div>
-          </div>
-        </div>
-
-        <div className={styles.row}>
-          <div className={styles.group}>
             <label className={styles.label}>Employment Type *</label>
             <div className={styles.radioGroup}>
               {EMPLOYMENT_TYPES.map(t => (
@@ -117,6 +105,9 @@ export function SubmitView({ onSuccess, prefill = null }) {
               ))}
             </div>
           </div>
+        </div>
+
+        <div className={styles.row}>
           <div className={styles.group}>
             <label className={styles.label}>Duration *</label>
             <select className={styles.select} name="duration" value={form.duration} onChange={handleChange}>
