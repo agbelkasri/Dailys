@@ -136,10 +136,51 @@
 }
 
 .dateDisplay {
+  position: relative;
   display: flex;
   flex-direction: column;
   align-items: center;
   min-width: 180px;
+}
+
+/* Click the date to open the calendar / type a date */
+.datePickerBtn {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  background: none;
+  border: none;
+  padding: 2px 4px;
+  border-radius: 4px;
+  color: inherit;
+  font: inherit;
+  cursor: pointer;
+}
+
+.datePickerBtn:hover {
+  background: rgba(255, 255, 255, 0.12);
+}
+
+.calIcon {
+  font-size: 11px;
+  opacity: 0.85;
+  line-height: 1;
+}
+
+/* Native date input lives behind the date button. Not display:none so
+   showPicker() works; the picker popup anchors here, under the date. */
+.hiddenDateInput {
+  position: absolute;
+  left: 50%;
+  bottom: -2px;
+  transform: translateX(-50%);
+  width: 1px;
+  height: 1px;
+  padding: 0;
+  margin: 0;
+  border: 0;
+  opacity: 0;
+  pointer-events: none;
 }
 
 .dateText {

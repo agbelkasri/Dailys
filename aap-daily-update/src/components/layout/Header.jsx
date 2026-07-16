@@ -50,6 +50,9 @@ export function Header({
   onPrevious,
   onNext,
   canGoNext,
+  selectedDate,
+  onSelectDate,
+  maxDate,
   onExportExcel,
   onExportPrint,
   onlineUsers,
@@ -61,7 +64,21 @@ export function Header({
 }) {
   const [menuOpen, setMenuOpen] = useState(false);
   const menuRef = useRef(null);
+  const dateInputRef = useRef(null);
   const isAdmin = useIsAdmin(user);
+
+  // Open the native calendar picker from the date button. showPicker() is the
+  // modern one-call API (Chrome/Edge/Firefox); fall back to focus+click for
+  // older browsers so typing/clicking the input still works.
+  function openDatePicker() {
+    const el = dateInputRef.current;
+    if (!el) return;
+    if (typeof el.showPicker === 'function') {
+      try { el.showPicker(); return; } catch { /* fall through to focus */ }
+    }
+    el.focus();
+    el.click();
+  }
   const TABS = isAdmin ? [...BASE_TABS, ...ADMIN_TABS] : BASE_TABS;
   const NON_DAILY = ['absentee', 'turnover', 'import'];
   const isDaily = !NON_DAILY.includes(activeTab);
@@ -208,8 +225,28 @@ export function Header({
             ‹
           </button>
           <div className={styles.dateDisplay}>
-            <span className={styles.dateText}>{displayDate}</span>
+            <button
+              type="button"
+              className={styles.datePickerBtn}
+              onClick={openDatePicker}
+              title="Pick a date"
+            >
+              <span className={styles.dateText}>{displayDate}</span>
+              <span className={styles.calIcon} aria-hidden="true">▾</span>
+            </button>
             {isReadOnly && <span className={styles.readOnlyTag}>Read Only</span>}
+            {/* Native date input — click the date above or type/pick here.
+                Kept in the DOM (not display:none) so showPicker() works. */}
+            <input
+              ref={dateInputRef}
+              type="date"
+              className={styles.hiddenDateInput}
+              value={selectedDate || ''}
+              max={maxDate}
+              onChange={(e) => e.target.value && onSelectDate?.(e.target.value)}
+              tabIndex={-1}
+              aria-label="Jump to date"
+            />
           </div>
           <button
             className={styles.navBtn}

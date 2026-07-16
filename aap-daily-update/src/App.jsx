@@ -28,6 +28,8 @@ function PlantDailyTab({ plantId, user, activeTab, onTabChange, onLogout, isDark
     goToNext,
     canGoNext,
     displayDate,
+    jumpToDate,
+    today,
   } = useDateNavigation();
 
   // Change-request unlock: a non-admin viewing a past day can click "Request
@@ -105,6 +107,9 @@ function PlantDailyTab({ plantId, user, activeTab, onTabChange, onLogout, isDark
         onPrevious={goToPrevious}
         onNext={goToNext}
         canGoNext={canGoNext}
+        selectedDate={selectedDate}
+        onSelectDate={jumpToDate}
+        maxDate={today}
         user={user}
         onLogout={onLogout}
         onExportExcel={handleExportExcel}

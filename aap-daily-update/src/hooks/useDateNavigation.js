@@ -47,6 +47,17 @@ export function useDateNavigation() {
     if (next <= today) setSelectedDate(next);
   };
 
+  // Jump straight to a date (from the calendar picker / date input). Reports
+  // exist for weekdays only, so a weekend pick snaps back to the nearest
+  // earlier weekday; future picks clamp to today.
+  const jumpToDate = (dateStr) => {
+    if (!dateStr) return;
+    let d = dateStr;
+    while (isWeekend(d)) d = prevWeekday(d);
+    if (d > today) d = today;
+    setSelectedDate(d);
+  };
+
   const canGoNext = nextWeekday(selectedDate) <= today;
 
   const displayDate = format(parseISO(selectedDate), 'EEEE, MMMM d, yyyy');
@@ -54,6 +65,7 @@ export function useDateNavigation() {
   return {
     selectedDate,
     setSelectedDate,
+    jumpToDate,
     isReadOnly,
     goToPrevious,
     goToNext,
