@@ -1,6 +1,7 @@
 import { useState, useMemo } from 'react';
 import { format, parseISO } from 'date-fns';
-import { getTodayDate, prevWeekday, nextWeekday } from '../../hooks/useDateNavigation';
+import { getTodayDate, prevWeekday, nextWeekday, snapToSelectableWeekday } from '../../hooks/useDateNavigation';
+import { DateJumpButton } from '../common/DateJumpButton';
 import { useAbsences } from '../../hooks/useAbsences';
 import { useStaffingByPlant } from '../../hooks/useStaffingByPlant';
 import { useHolidays } from '../../hooks/useHolidays';
@@ -150,6 +151,9 @@ export function DailyView({ plantFilter }) {
   function goToToday() {
     setSelectedDate(getTodayDate());
   }
+  function jumpTo(dateStr) {
+    setSelectedDate(snapToSelectableWeekday(dateStr, getTodayDate()));
+  }
 
   const displayDate = format(parseISO(selectedDate), 'EEEE, MMMM d, yyyy');
   const isToday = selectedDate === getTodayDate();
@@ -170,7 +174,9 @@ export function DailyView({ plantFilter }) {
       <div className={styles.dateBar}>
         <button className={styles.navBtn} onClick={goToPrev}>‹</button>
         <div className={styles.dateInfo}>
-          <span className={styles.dateText}>{displayDate}</span>
+          <DateJumpButton value={selectedDate} max={getTodayDate()} onSelect={jumpTo}>
+            <span className={styles.dateText}>{displayDate}</span>
+          </DateJumpButton>
           {isToday && <span className={styles.todayTag}>Today</span>}
         </div>
         <button className={styles.navBtn} onClick={goToNext} disabled={!canGoNext}>›</button>

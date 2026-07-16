@@ -30,6 +30,17 @@ export function getTodayDate() {
   return dateStr;
 }
 
+// Snap an arbitrary picked date to a valid, selectable weekday: reports exist
+// Mon–Fri, so a weekend pick moves to the nearest earlier weekday; a future
+// pick clamps to `today`. Shared by every date-picker in the app.
+export function snapToSelectableWeekday(dateStr, today) {
+  if (!dateStr) return today;
+  let d = dateStr;
+  while (isWeekend(d)) d = prevWeekday(d);
+  if (today && d > today) d = today;
+  return d;
+}
+
 export function useDateNavigation() {
   const today = getTodayDate();
   const [selectedDate, setSelectedDate] = useState(today);
@@ -47,15 +58,10 @@ export function useDateNavigation() {
     if (next <= today) setSelectedDate(next);
   };
 
-  // Jump straight to a date (from the calendar picker / date input). Reports
-  // exist for weekdays only, so a weekend pick snaps back to the nearest
-  // earlier weekday; future picks clamp to today.
+  // Jump straight to a date (from the calendar picker / date input).
   const jumpToDate = (dateStr) => {
     if (!dateStr) return;
-    let d = dateStr;
-    while (isWeekend(d)) d = prevWeekday(d);
-    if (d > today) d = today;
-    setSelectedDate(d);
+    setSelectedDate(snapToSelectableWeekday(dateStr, today));
   };
 
   const canGoNext = nextWeekday(selectedDate) <= today;

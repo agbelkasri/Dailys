@@ -1,0 +1,45 @@
+.wrap {
+  position: relative;
+  display: inline-flex;
+  align-items: center;
+}
+
+.btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  background: none;
+  border: none;
+  padding: 2px 6px;
+  border-radius: 4px;
+  color: inherit;
+  font: inherit;
+  cursor: pointer;
+}
+
+.btn:hover {
+  background: var(--bg-muted);
+}
+
+.cal {
+  font-size: 11px;
+  opacity: 0.7;
+  line-height: 1;
+}
+
+/* Real date input behind the label — invisible but focusable so the native
+   picker anchors here, directly under the date. Not display:none (that would
+   disable showPicker on some browsers). */
+.input {
+  position: absolute;
+  left: 50%;
+  bottom: -2px;
+  transform: translateX(-50%);
+  width: 1px;
+  height: 1px;
+  padding: 0;
+  margin: 0;
+  border: 0;
+  opacity: 0;
+  pointer-events: none;
+}
