@@ -38,8 +38,15 @@ export function MonthlyTurnoverDashboard({ plantId, year }) {
   const base = baselineFor(baseline, category);
 
   const table = useMemo(() => {
+    // The Excel carries all 12 months, so unfilled future months import as
+    // 0 headcount / 0 terms. Drop them so the table and the "latest month"
+    // card reflect the last month with real data — not an empty December.
+    const filled = rows.filter(r => {
+      const t = catCell(r, 'total');
+      return t.headcount > 0 || t.terminations > 0;
+    });
     let ytdTerms = 0;
-    return rows.map(r => {
+    return filled.map(r => {
       const { headcount, terminations } = catCell(r, category);
       ytdTerms += terminations;
       const monthIdx = Number(String(r.month).slice(5, 7)) - 1;
