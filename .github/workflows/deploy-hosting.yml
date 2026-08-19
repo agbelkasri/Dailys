@@ -54,20 +54,10 @@ jobs:
           VITE_FIREBASE_DATABASE_URL:        https://dailys-aap-default-rtdb.firebaseio.com
           VITE_MICROSOFT_TENANT_ID:          f8e3ae36-5152-43b5-a11c-b5ca4e51a5b9
 
-      - name: Deploy Firestore rules
-        # Deploy security rules with the same service account that deploys
-        # hosting. Runs BEFORE the hosting step on purpose: if the rules
-        # deploy fails (e.g. the service account lacks the Firebase Rules
-        # role), the whole job fails and the UI is NOT shipped — avoiding a
-        # state where the site is live but the rules deny its data.
-        working-directory: aap-daily-update
-        env:
-          FIREBASE_SERVICE_ACCOUNT: ${{ secrets.FIREBASE_SERVICE_ACCOUNT }}
-        run: |
-          printf '%s' "$FIREBASE_SERVICE_ACCOUNT" > "$RUNNER_TEMP/sa.json"
-          export GOOGLE_APPLICATION_CREDENTIALS="$RUNNER_TEMP/sa.json"
-          npx --yes firebase-tools deploy --only firestore:rules --project dailys-aap --non-interactive
-
+      # NOTE: firestore.rules are deployed manually (firebase deploy --only
+      # firestore:rules) with an account that has the Firebase Rules role —
+      # the hosting service account used below does not. Remember to deploy
+      # rules by hand when firestore.rules changes.
       - name: Deploy to Firebase Hosting
         uses: FirebaseExtended/action-hosting-deploy@v0
         with:
