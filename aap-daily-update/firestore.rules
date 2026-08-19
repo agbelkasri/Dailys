@@ -82,6 +82,20 @@ service cloud.firestore {
       allow delete: if request.auth != null;
     }
 
+    // Aggregate monthly turnover — imported from the Turnover_Tracker Excel.
+    // Readable by any authenticated user; written only by admins (the in-app
+    // Excel importer runs with the signed-in admin's own credentials).
+    match /turnoverMonthly/{docId} {
+      allow read:  if request.auth != null;
+      allow write: if isAdmin();
+    }
+
+    // Dec-2025 baseline headcounts per plant (denominator for YTD %).
+    match /turnoverBaseline/{plantId} {
+      allow read:  if request.auth != null;
+      allow write: if isAdmin();
+    }
+
     // Absentee records — authenticated users can read, create, update, delete
     match /absences/{absenceId} {
       allow read: if request.auth != null;
