@@ -34,10 +34,12 @@ const BASE_TABS = [
   { id: 'GAP',      label: 'GAP Daily' },
   { id: 'SLP',      label: 'SLP Daily' },
   { id: 'absentee', label: 'Absentee'  },
+  { id: 'turnover', label: 'Turnover'  },
 ];
 
+// Import stays admin-only (it writes to Firestore). Turnover's dashboard is
+// now visible to everyone; its import sub-tab is gated inside TurnoverReport.
 const ADMIN_TABS = [
-  { id: 'turnover', label: 'Turnover' },
   { id: 'import',   label: 'Import'   },
 ];
 

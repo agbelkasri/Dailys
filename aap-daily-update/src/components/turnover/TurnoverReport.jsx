@@ -1,4 +1,5 @@
 import { useState } from 'react';
+import { useIsAdmin } from '../../hooks/useIsAdmin';
 import { TURNOVER_PLANTS } from '../../constants/turnoverMonthly';
 import { MonthlyTurnoverDashboard } from './MonthlyTurnoverDashboard';
 import { TurnoverExcelImport } from './TurnoverExcelImport';
@@ -14,24 +15,32 @@ function yearOptions() {
   return years.reverse();
 }
 
-// This whole tab is admin-only (gated in App.jsx), so both sub-tabs are shown.
-export function TurnoverReport() {
+// The Dashboard is visible to all authenticated users. The Excel import writes
+// to Firestore and is admin-only (also enforced by security rules), so its
+// sub-tab is only shown to admins.
+export function TurnoverReport({ user }) {
+  const isAdmin = useIsAdmin(user);
   const [subTab, setSubTab] = useState('dashboard');
   const [plantId, setPlantId] = useState('EAP');
   const [year, setYear] = useState(() => Math.max(new Date().getFullYear(), 2026));
   const years = yearOptions();
 
+  const subTabs = isAdmin
+    ? [{ id: 'dashboard', label: 'Dashboard' }, { id: 'import', label: 'Import Excel' }]
+    : [{ id: 'dashboard', label: 'Dashboard' }];
+
+  // A non-admin can never sit on the import view (e.g. if it was selected
+  // before an admin/role change resolved).
+  const activeSub = subTab === 'import' && !isAdmin ? 'dashboard' : subTab;
+
   return (
     <div className={styles.wrapper}>
       <div className={styles.subNav}>
         <div className={styles.tabs}>
-          {[
-            { id: 'dashboard', label: 'Dashboard' },
-            { id: 'import',    label: 'Import Excel' },
-          ].map(t => (
+          {subTabs.map(t => (
             <button
               key={t.id}
-              className={subTab === t.id ? styles.tabActive : styles.tab}
+              className={activeSub === t.id ? styles.tabActive : styles.tab}
               onClick={() => setSubTab(t.id)}
             >
               {t.label}
@@ -39,7 +48,7 @@ export function TurnoverReport() {
           ))}
         </div>
 
-        {subTab === 'dashboard' && (
+        {activeSub === 'dashboard' && (
           <div className={styles.plantFilterWrap}>
             <label className={styles.plantLabel}>Plant:</label>
             <select
@@ -64,10 +73,10 @@ export function TurnoverReport() {
       </div>
 
       <div className={styles.content}>
-        {subTab === 'dashboard' && (
+        {activeSub === 'dashboard' && (
           <MonthlyTurnoverDashboard plantId={plantId} year={year} />
         )}
-        {subTab === 'import' && (
+        {activeSub === 'import' && isAdmin && (
           <TurnoverExcelImport onImported={() => setSubTab('dashboard')} />
         )}
       </div>

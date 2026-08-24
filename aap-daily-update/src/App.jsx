@@ -149,7 +149,9 @@ function PlantDailyTab({ plantId, user, activeTab, onTabChange, onLogout, isDark
 }
 
 const VALID_TABS = ['EAP', 'GAP', 'SLP', 'absentee', 'turnover', 'import'];
-const ADMIN_ONLY_TABS = ['turnover', 'import'];
+// Turnover's dashboard is open to all authenticated users; only Import remains
+// admin-only. (The Turnover import sub-tab is gated inside TurnoverReport.)
+const ADMIN_ONLY_TABS = ['import'];
 
 function getInitialTab() {
   const hash = window.location.hash.replace('#', '');
