@@ -106,10 +106,10 @@ export function MonthlyTurnoverDashboard({ plantId, year }) {
             <thead>
               <tr>
                 <th className={styles.left}>Month</th>
-                <th>EOM HC</th>
-                <th>Terms</th>
+                <th>End of Month Headcount</th>
+                <th>Terminations</th>
                 <th>Monthly %</th>
-                <th>YTD Terms</th>
+                <th>YTD Terminations</th>
                 <th>YTD %</th>
               </tr>
             </thead>
