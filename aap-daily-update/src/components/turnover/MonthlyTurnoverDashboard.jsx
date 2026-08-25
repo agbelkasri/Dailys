@@ -29,6 +29,7 @@ function baselineFor(baseline, catId) {
 }
 
 const fmtPct = (num, den) => (den > 0 ? `${((num / den) * 100).toFixed(1)}%` : '—');
+const fmtDelta = (n) => (n == null ? '—' : n > 0 ? `+${n}` : String(n));
 
 export function MonthlyTurnoverDashboard({ plantId, year }) {
   const [category, setCategory] = useState('total');
@@ -46,23 +47,30 @@ export function MonthlyTurnoverDashboard({ plantId, year }) {
       return t.headcount > 0 || t.terminations > 0;
     });
     let ytdTerms = 0;
+    // Headcount Change is month-over-month; the first month compares to the
+    // Dec-2025 baseline (null if we have no baseline to compare against).
+    let prevHc = base > 0 ? base : null;
     return filled.map(r => {
       const { headcount, terminations } = catCell(r, category);
       ytdTerms += terminations;
+      const hcChange = prevHc == null ? null : headcount - prevHc;
+      prevHc = headcount;
       const monthIdx = Number(String(r.month).slice(5, 7)) - 1;
       return {
         month: r.month,
         label: MONTH_ABBR[monthIdx] || r.month,
         headcount,
+        hcChange,
         terminations,
-        monthlyPct: fmtPct(terminations, headcount),
+        turnoverRate: fmtPct(terminations, headcount),
         ytdTerms,
-        ytdPct: fmtPct(ytdTerms, base),
+        ytdRate: fmtPct(ytdTerms, base),
       };
     });
   }, [rows, category, base]);
 
   const last = table[table.length - 1];
+  const netChange = last && base > 0 ? last.headcount - base : null;
 
   if (loading) return <div className={styles.state}>Loading…</div>;
   if (error)   return <div className={styles.stateError}>{error}</div>;
@@ -90,14 +98,20 @@ export function MonthlyTurnoverDashboard({ plantId, year }) {
 
       <StatsGrid>
         <StatsCard
-          label={`YTD Turnover % (${year})`}
-          value={last ? last.ytdPct : '—'}
+          label={`YTD Turnover Rate (${year})`}
+          value={last ? last.ytdRate : '—'}
           accent="#1a3a5c"
-          sub={`${last ? last.ytdTerms : 0} terms vs ${base} baseline`}
+          sub={`${last ? last.ytdTerms : 0} terminations vs ${base} baseline`}
         />
         <StatsCard label="YTD Terminations" value={last ? last.ytdTerms : 0} accent="#dc2626" />
-        <StatsCard label={`${last ? last.label : '—'} Monthly %`} value={last ? last.monthlyPct : '—'} accent="#2563eb" />
+        <StatsCard label={`${last ? last.label : '—'} Turnover Rate`} value={last ? last.turnoverRate : '—'} accent="#2563eb" />
         <StatsCard label="Baseline Headcount" value={base} accent="#16a34a" sub="Dec 2025" />
+        <StatsCard
+          label="Net Change (YTD)"
+          value={fmtDelta(netChange)}
+          accent={netChange > 0 ? '#16a34a' : netChange < 0 ? '#dc2626' : '#64748b'}
+          sub="vs Dec 2025 baseline"
+        />
       </StatsGrid>
 
       <div className={styles.tableCard}>
@@ -107,10 +121,11 @@ export function MonthlyTurnoverDashboard({ plantId, year }) {
               <tr>
                 <th className={styles.left}>Month</th>
                 <th>End of Month Headcount</th>
+                <th>Headcount Change</th>
                 <th>Terminations</th>
-                <th>Monthly %</th>
+                <th>Turnover Rate</th>
                 <th>YTD Terminations</th>
-                <th>YTD %</th>
+                <th>YTD Turnover Rate</th>
               </tr>
             </thead>
             <tbody>
@@ -118,17 +133,22 @@ export function MonthlyTurnoverDashboard({ plantId, year }) {
                 <tr key={r.month}>
                   <td className={styles.left}>{r.label}</td>
                   <td>{r.headcount}</td>
+                  <td className={r.hcChange > 0 ? styles.up : r.hcChange < 0 ? styles.down : undefined}>
+                    {fmtDelta(r.hcChange)}
+                  </td>
                   <td>{r.terminations}</td>
-                  <td>{r.monthlyPct}</td>
+                  <td>{r.turnoverRate}</td>
                   <td>{r.ytdTerms}</td>
-                  <td className={styles.ytd}>{r.ytdPct}</td>
+                  <td className={styles.ytd}>{r.ytdRate}</td>
                 </tr>
               ))}
             </tbody>
           </table>
         </div>
         <div className={styles.note}>
-          Monthly % = terminations ÷ end-of-month headcount. YTD % = cumulative terminations ÷ Dec-2025 baseline headcount.
+          Turnover Rate = terminations ÷ end-of-month headcount. YTD Turnover Rate = cumulative
+          terminations ÷ Dec-2025 baseline headcount. Headcount Change = net change vs the prior
+          month (the first month is compared to the Dec-2025 baseline).
         </div>
       </div>
     </div>
