@@ -105,6 +105,21 @@
   background: var(--bg-subtle);
 }
 
+.cardHeader {
+  padding: 10px 14px;
+  font-size: 13px;
+  font-weight: 600;
+  color: var(--text-primary);
+  background: var(--bg-subtle);
+  border-bottom: 1px solid var(--border-default);
+}
+
+.donutBody {
+  padding: 18px;
+  display: flex;
+  justify-content: center;
+}
+
 .state {
   padding: 40px 20px;
   text-align: center;

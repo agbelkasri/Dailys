@@ -53,6 +53,12 @@ function colContaining(hmap, substr) {
   return undefined;
 }
 
+// First column whose (lower-cased) header satisfies `pred`.
+function firstColMatching(hmap, pred) {
+  for (const [k, v] of Object.entries(hmap)) if (pred(k)) return v;
+  return undefined;
+}
+
 // Excel month cell -> "YYYY-MM". Handles a JS Date (the usual case) or text.
 function toMonthKey(cell) {
   const raw = cell?.value;
@@ -117,8 +123,13 @@ export function parseTurnoverTracker(wb) {
     const cPlant = h['plant'] || colContaining(h, 'plant');
     const cLabor = h['labor type'] || colContaining(h, 'labor');
     const cHc    = colContaining(h, 'end-of-month headcount') || colContaining(h, 'headcount');
+    // Newer format splits terminations into Voluntary + Involuntary columns.
+    // NB: "involuntary" contains the substring "voluntary", so match carefully.
+    const cVol   = firstColMatching(h, k => k.includes('voluntary') && !k.includes('involuntary'));
+    const cInvol = colContaining(h, 'involuntary');
     const cTerm  = colContaining(h, 'terminations') || colContaining(h, 'termination');
-    if (!cMonth || !cPlant || !cLabor || !cHc || !cTerm) {
+    const hasSplit = cVol != null && cInvol != null;
+    if (!cMonth || !cPlant || !cLabor || !cHc || (!hasSplit && !cTerm)) {
       warnings.push('Monthly_Input sheet is missing expected columns.');
     } else {
       mSheet.eachRow((row, rn) => {
@@ -127,13 +138,14 @@ export function parseTurnoverTracker(wb) {
         const plantId = String(cellText(row.getCell(cPlant))).trim().toUpperCase();
         const category = categoryFor(cellText(row.getCell(cLabor)));
         if (!month || !plantId || !category) return;      // skip incomplete rows
-        monthly.push({
-          plantId,
-          month,
-          category,
-          headcount: num(row.getCell(cHc)),
-          terminations: num(row.getCell(cTerm)),
-        });
+        const rec = { plantId, month, category, headcount: num(row.getCell(cHc)) };
+        if (hasSplit) {
+          rec.voluntary = num(row.getCell(cVol));
+          rec.involuntary = num(row.getCell(cInvol));
+        } else {
+          rec.terminations = num(row.getCell(cTerm));     // older single-column format
+        }
+        monthly.push(rec);
       });
     }
   }

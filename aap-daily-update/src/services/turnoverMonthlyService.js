@@ -27,10 +27,9 @@ export function groupMonthlyRows(rows) {
       });
     }
     if (CATEGORY_IDS.includes(r.category)) {
-      byDoc.get(id)[r.category] = {
-        headcount: r.headcount,
-        terminations: r.terminations,
-      };
+      byDoc.get(id)[r.category] = r.voluntary != null || r.involuntary != null
+        ? { headcount: r.headcount, voluntary: r.voluntary || 0, involuntary: r.involuntary || 0 }
+        : { headcount: r.headcount, voluntary: 0, involuntary: 0, terminations: r.terminations || 0 };
     }
   }
   return [...byDoc.values()].sort(

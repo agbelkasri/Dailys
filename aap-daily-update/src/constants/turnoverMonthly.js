@@ -34,10 +34,11 @@ export const MONTH_ABBR = [
 ];
 
 // A zeroed category map — the default shape of a monthly doc's category fields.
+// Terminations are split into voluntary + involuntary (total = vol + invol).
 export function emptyCategoryMap() {
   return {
-    salary:   { headcount: 0, terminations: 0 },
-    direct:   { headcount: 0, terminations: 0 },
-    indirect: { headcount: 0, terminations: 0 },
+    salary:   { headcount: 0, voluntary: 0, involuntary: 0 },
+    direct:   { headcount: 0, voluntary: 0, involuntary: 0 },
+    indirect: { headcount: 0, voluntary: 0, involuntary: 0 },
   };
 }

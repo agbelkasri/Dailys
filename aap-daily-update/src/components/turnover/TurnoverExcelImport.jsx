@@ -69,9 +69,15 @@ export function TurnoverExcelImport({ onImported }) {
 
   const months = [...new Set(monthlyDocs.map(d => d.month))].sort();
   const plants = [...new Set(monthlyDocs.map(d => d.plantId))].sort();
-  const totalTerms = monthlyDocs.reduce(
-    (s, d) => s + (d.salary.terminations + d.direct.terminations + d.indirect.terminations), 0
+  const cellTotal = (c) => (c.voluntary != null || c.involuntary != null)
+    ? (c.voluntary || 0) + (c.involuntary || 0)
+    : (c.terminations || 0);
+  const sumField = (fn) => monthlyDocs.reduce(
+    (s, d) => s + TURNOVER_CATEGORIES.reduce((a, c) => a + fn(d[c.id] || {}), 0), 0
   );
+  const totalTerms = sumField(cellTotal);
+  const totalVol   = sumField(c => c.voluntary || 0);
+  const totalInvol = sumField(c => c.involuntary || 0);
 
   return (
     <div className={styles.wrapper}>
@@ -113,9 +119,9 @@ export function TurnoverExcelImport({ onImported }) {
         <>
           <div className={styles.summary}>
             Found <strong>{monthlyDocs.length}</strong> plant-months across{' '}
-            <strong>{months.length}</strong> months for <strong>{plants.join(', ')}</strong>,{' '}
-            <strong>{totalTerms}</strong> total terminations. Baseline for{' '}
-            <strong>{baselineDocs.map(b => b.plantId).join(', ') || '—'}</strong>.
+            <strong>{months.length}</strong> months for <strong>{plants.join(', ')}</strong>:{' '}
+            <strong>{totalTerms}</strong> terminations ({totalVol} voluntary, {totalInvol} involuntary).
+            Baseline for <strong>{baselineDocs.map(b => b.plantId).join(', ') || '—'}</strong>.
           </div>
 
           <div className={styles.tableWrap}>
@@ -124,7 +130,7 @@ export function TurnoverExcelImport({ onImported }) {
                 <tr>
                   <th className={styles.left}>Month</th>
                   <th className={styles.left}>Plant</th>
-                  {TURNOVER_CATEGORIES.map(c => <th key={c.id}>{c.label} (HC / Terms)</th>)}
+                  {TURNOVER_CATEGORIES.map(c => <th key={c.id}>{c.label} (HC / Vol / Invol)</th>)}
                 </tr>
               </thead>
               <tbody>
@@ -133,7 +139,7 @@ export function TurnoverExcelImport({ onImported }) {
                     <td className={styles.left}>{d.month}</td>
                     <td className={styles.left}>{d.plantId}</td>
                     {TURNOVER_CATEGORIES.map(c => (
-                      <td key={c.id}>{d[c.id].headcount} / {d[c.id].terminations}</td>
+                      <td key={c.id}>{d[c.id].headcount} / {d[c.id].voluntary || 0} / {d[c.id].involuntary || 0}</td>
                     ))}
                   </tr>
                 ))}
